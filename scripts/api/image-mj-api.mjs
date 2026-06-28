@@ -1,4 +1,4 @@
-import { Constants } from "../actor.mjs";
+import { Constants } from "../constants.mjs";
 
 export default class ImageMidJourneyApi {
   

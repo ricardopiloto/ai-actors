@@ -1,49 +1,48 @@
-<form class="actor-ai">
+<div class="actor-ai">
     <div class="actor-ai-gen-window">
-        <div class="actor-ai-response">
-            <div class="actor-ai-img">
-                {{#if actorInput.imageSrc}}
-                    <img class="actor-ai-img-gen" src="{{actorInput.imageSrc}}">
-                {{else}}
-                    <img class="actor-ai-img-gen" src="icons/svg/mystery-man.svg">
-                {{/if}}
-                {{#if (eq context.stage "final")}}
-                    <textarea name="actorInput.imagePrompt" class="actor-ai-image-description">{{actorInput.imagePrompt}}</textarea>
-                    <div class="actor-ai-img-buttons">
-                        <button type="button" data-action="generate">{{localize "AActors.General.GenerateImage"}}</button>
-                    </div>
-                    
-                    {{#if (eq actorInput.upscale true)}}
-                    <div class="actor-ai-img-buttons" data-message-id="{{actorInput.messageId}}" >
-                        {{#each actorInput.upscalers as |upscale i|}}
-                            <button type="button" data-custom-id="{{upscale}}" data-action="upscale">U{{i}}</button>
-                        {{/each}}
-                    </div>
+        <div class="actor-ai-scroll">
+            <div class="actor-ai-response">
+                <div class="actor-ai-img">
+                    {{#if actorInput.imageSrc}}
+                        <img class="actor-ai-img-gen" src="{{actorInput.imageSrc}}" data-action="previewImage">
+                    {{else}}
+                        <img class="actor-ai-img-gen" src="icons/svg/mystery-man.svg" data-action="previewImage">
                     {{/if}}
+                    {{#if (eq context.stage "final")}}
+                        <textarea name="actorInput.imagePrompt" class="actor-ai-image-description">{{actorInput.imagePrompt}}</textarea>
+                        <div class="actor-ai-img-buttons">
+                            <button type="button" data-action="generate">{{localize "AActors.General.GenerateImage"}}</button>
+                        </div>
+                        
+                        {{#if (eq actorInput.upscale true)}}
+                        <div class="actor-ai-img-buttons" data-message-id="{{actorInput.messageId}}" >
+                            {{#each actorInput.upscalers as |upscale i|}}
+                                <button type="button" data-custom-id="{{upscale}}" data-action="upscale">U{{i}}</button>
+                            {{/each}}
+                        </div>
+                        {{/if}}
+                    {{/if}}
+                </div>
+                {{#if (ne context.stage "init")}}
+                    <div class="actor-ai-sheet-body">
+                        {{editor enrichedHtml target="actorInput.html" engine="prosemirror" button=true owner=owner editable=editable}}
+                    </div>
                 {{/if}}
             </div>
-            {{#if (ne context.stage "init")}}
-                {{editor actorInput.html target="actorInput.html" engine="prosemirror" button=true owner=owner editable=editable}}
-            {{/if}}
-        </div>
-        <div class="actor-ai-loader-wrapper">
-            {{#if (ne context.stage "final")}}
-                <div class="actor-ai-loader"></div>
-                <div class="actor-ai-loader-message">
-                    {{ context.stageDescription }}
-                </div>   
-            {{/if}}
+            <div class="actor-ai-loader-wrapper">
+                {{#if (ne context.stage "final")}}
+                    <div class="actor-ai-loader"></div>
+                    <div class="actor-ai-loader-message">
+                        {{ context.stageDescription }}
+                    </div>   
+                {{/if}}
+            </div>
         </div>
         <div class="actor-ai-inputs">
             <select name="folder" data-dtype="String" class="selector actor-ai-folders">
-                {{#select folder}}
-                  <option value="0">{{localize "AActors.General.SelectFolder"}}</option>
-                  {{#each folders as |folder|}}
-                    <option value="{{folder.value}}">{{folder.name}}</option>
-                  {{/each}}
-                {{/select}}
-              </select>
+                {{selectOptions folders selected=folder valueAttr="value" labelAttr="name" localize=false}}
+            </select>
             <button type="button" data-action="save">{{localize "AActors.General.Save"}}</button>
         </div>
     </div>
-</form>
+</div>

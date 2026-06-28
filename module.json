@@ -1,5 +1,5 @@
 {
-  "id": "aactors",
+  "id": "ai-actors",
   "title": "AI Generated NPCs",
   "description": "GM Assistant that creates AI NPCs from prompts",
   "authors": [
@@ -12,10 +12,19 @@
       "discord": "silent_mark"
     }
   ],
-  "version": "1.4.1",
+  "version": "1.8.0",
   "compatibility": {
-      "minimum": "11",
-      "verified": "12"
+      "minimum": "13",
+      "verified": "14"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "wfrp4e",
+        "type": "system",
+        "compatibility": {}
+      }
+    ]
   },
   "esmodules": [
     "/scripts/actor.mjs"

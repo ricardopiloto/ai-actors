@@ -1,7 +1,29 @@
-.actor-ai .window-content form {
+.application.actor-ai .window-content {
     border-image: url(/systems/wfrp4e/ui/frames/parchment-texture.webp) 4 repeat;
     border-image-slice: 250 fill;
-    border-image-outset: 44px 34px 0px 34px;
+    border-image-outset: 44px 34px 0 34px;
+    color: var(--color-text-primary, #1a1a1a);
+    background: rgba(245, 235, 215, 0.95);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.application.actor-ai .window-content > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.actor-ai {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .actor-ai-img {
@@ -15,8 +37,16 @@
 }
 
 .actor-ai-img-gen {
-    padding: 5px;;
+    padding: 5px;
     cursor: zoom-in;
+}
+
+.create-actor-ai-actor.create-entry {
+    flex: 1 1 auto;
+}
+
+.create-actor-ai-actor.create-entry span {
+    margin-left: 0.25rem;
 }
 
 .actor-ai-img-buttons {
@@ -27,23 +57,91 @@
 .actor-ai-gen-window {
     display: flex;
     flex-direction: column;
-    justify-items: stretch;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.actor-ai-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-color: rgba(93, 60, 20, 0.55) rgba(245, 235, 215, 0.5);
+    scrollbar-width: thin;
 }
 
 .actor-ai-response {
-    color: black;
-    font-family: CaslonAntiquePL !important;
+    color: var(--color-text-primary, #1a1a1a);
+    font-family: CaslonAntiquePL, CaslonAntique, serif !important;
     margin-top: 2em;
     flex-direction: row;
     display: flex;
     justify-content: center;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 0 0.5rem 1rem;
+}
+
+.actor-ai-sheet-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.application.actor-ai .actor-ai-sheet-body .editor-section,
+.application.actor-ai .actor-ai-sheet-body prose-mirror,
+.application.actor-ai .actor-ai-sheet-body .prosemirror {
+    min-height: 0;
+    color: #1a1a1a;
+}
+
+.application.actor-ai .actor-ai-sheet-body .editor-section .editor-container,
+.application.actor-ai .actor-ai-sheet-body .editor-section .editor-content,
+.application.actor-ai .actor-ai-sheet-body prose-mirror .editor-content,
+.application.actor-ai .actor-ai-sheet-body .prosemirror .editor-content {
+    color: #1a1a1a;
+    background: rgba(255, 250, 240, 0.88);
+    max-height: none;
+    overflow: visible;
+}
+
+.application.actor-ai .actor-ai-sheet-body .editor-content h1,
+.application.actor-ai .actor-ai-sheet-body .editor-content h2,
+.application.actor-ai .actor-ai-sheet-body .editor-content h3 {
+    color: #3d2b1f;
+    text-shadow: none;
+}
+
+.application.actor-ai .actor-ai-sheet-body .editor-content p,
+.application.actor-ai .actor-ai-sheet-body .editor-content li,
+.application.actor-ai .actor-ai-sheet-body .editor-content strong,
+.application.actor-ai .actor-ai-sheet-body .editor-content td,
+.application.actor-ai .actor-ai-sheet-body .editor-content th {
+    color: #1a1a1a;
+}
+
+.application.actor-ai .actor-ai-sheet-body .ability-block table {
+    color: #1a1a1a;
+    background: rgba(255, 255, 255, 0.75);
+    border-collapse: collapse;
+}
+
+.application.actor-ai .actor-ai-sheet-body .ability-block table td {
+    color: #1a1a1a;
+    border-color: rgba(93, 60, 20, 0.45);
+}
+
+.application.actor-ai .actor-ai-sheet-body .content-link {
+    color: #1a1a1a;
 }
 
 .actor-ai-inputs {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex-shrink: 0;
+    padding: 0.5rem;
+    border-top: 1px solid rgba(93, 60, 20, 0.25);
+    background: rgba(245, 235, 215, 0.98);
 }
 
 .actor-ai-inputs select {
@@ -62,7 +160,6 @@
     color: rgb(66, 66, 66);
 }
 
-
 .actor-ai-folders {
     padding: 5px;
     margin: 3px;
@@ -72,17 +169,17 @@
 .actor-ai-image-description {
     height: 200px;
     padding: 5px !important;
-    background: none;
+    background: rgba(255, 250, 240, 0.88);
     margin: 3px;
-    color: black;
+    color: #1a1a1a;
 }
 
 .actor-ai-textarea {
     height: calc(100% - 45px);
     padding: 5px !important;
-    background: none;
+    background: rgba(255, 250, 240, 0.88);
     margin: 3px;
-    color: black;
+    color: #1a1a1a;
 }
 
 .actor-ai-textarea::placeholder {
@@ -107,27 +204,24 @@
 }
 
 .actor-ai-loader-message {
-    color: black;
+    color: var(--color-text-primary, #1a1a1a);
 }
 
 .ai-image-upscale {
     width: 20%;
 }
 
-/* Safari */
 @-webkit-keyframes spin {
     0% { -webkit-transform: rotate(0deg); }
     100% { -webkit-transform: rotate(360deg); }
 }
-  
-  @keyframes spin {
+
+@keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
 
 .collapsible {
-    /* background-color: #777; */
-    /* color: white; */
     cursor: pointer;
     padding: 18px;
     width: 100%;
@@ -136,12 +230,12 @@
     outline: none;
     font-size: 15px;
     margin: 7px 0;
-  }
-  
-  .ai-img-gen {
-    max-width: 300px;
-  }
+}
 
-  #ai-hist-form {
+.ai-img-gen {
+    max-width: 300px;
+}
+
+#ai-hist-form {
     min-height: 442px;
-  }
+}

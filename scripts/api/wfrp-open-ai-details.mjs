@@ -1,7 +1,5 @@
-import { Constants } from "../actor.mjs";
 import InputModel from "../model/input-model.mjs";
-import ActorAiOpenAiApi from "./actor-ai-open-ai-api.mjs"
-import ImageMidJourneyApi from "./image-mj-api.mjs";
+import { findWfrpItems, getWfrpNpcInitialItems, getWfrpUtility, resolveWfrpSpecies } from "../compat.mjs";
 
 export default class WfrpOpenAiDetailsApi {
   
@@ -18,10 +16,10 @@ export default class WfrpOpenAiDetailsApi {
 
   async updateStageInputModel(stage, inputModel, actorInput) {
     if (WfrpOpenAiDetailsApi.careers === null) {
-      WfrpOpenAiDetailsApi.careers = await game.wfrp4e.utility.findAll("career");
+      WfrpOpenAiDetailsApi.careers = await findWfrpItems("career");
     }
     if (WfrpOpenAiDetailsApi.talents === null) {
-      WfrpOpenAiDetailsApi.talents = await game.wfrp4e.utility.findAll("talent");
+      WfrpOpenAiDetailsApi.talents = await findWfrpItems("talent");
     }
 
     if (stage.stage === "characteristics") { 
@@ -92,40 +90,20 @@ export default class WfrpOpenAiDetailsApi {
     }
 
     for (let career of originalCareers) {
-      let co = WfrpOpenAiDetailsApi.careers.find(c => c.name === career || c.flags?.babele?.originalName === career);
-      if (!co) {
-        co = WfrpOpenAiDetailsApi.careers
-          .map(c => { return { 
-            name: c.name, 
-            uuid: c.uuid, 
-            index: c.flags?.babele?.originalName ? Math.min(WfrpOpenAiDetailsApi.levenshtein(c.name, career), WfrpOpenAiDetailsApi.levenshtein(c.flags.babele.originalName, career)) : WfrpOpenAiDetailsApi.levenshtein(c.name, career)
-          }; })
-          .filter(x => x.index < 10)
-          .sort((a, b) => a.index - b.index)[0];
-      }
-      if (co) {
-        npc.careers.push({name: co.name, uuid: co.uuid, originalName: career});
+      const match = WfrpOpenAiDetailsApi.#resolveCareerMatch(WfrpOpenAiDetailsApi.careers, career);
+      if (match) {
+        npc.careers.push(match);
       } else {
-        npc.careers.push({name: career, uuid: null});
+        npc.careers.push({ name: career, uuid: null, originalName: career });
       }
     }
 
     for (let talent of originalTalents) {
-      let to = WfrpOpenAiDetailsApi.talents.find(t => t.name === talent || t.flags?.babele?.originalName === talent);
-      if (!to) {
-        to = WfrpOpenAiDetailsApi.talents
-          .map(t => { return { 
-            name: t.name, 
-            uuid: t.uuid, 
-            index: t.flags?.babele?.originalName ? Math.min(WfrpOpenAiDetailsApi.levenshtein(t.name, talent), WfrpOpenAiDetailsApi.levenshtein(t.flags.babele.originalName, talent)) : WfrpOpenAiDetailsApi.levenshtein(t.name, talent)
-          }; })
-          .filter(x => x.index < 10)
-          .sort((a, b) => a.index - b.index)[0];
-      }
-      if (to) {
-        npc.talents.push({name: to.name, uuid: to.uuid, originalName: talent});
+      const match = WfrpOpenAiDetailsApi.#resolveTalentMatch(WfrpOpenAiDetailsApi.talents, talent);
+      if (match) {
+        npc.talents.push(match);
       } else {
-        npc.talents.push({name: talent, uuid: null});
+        npc.talents.push({ name: talent, uuid: null, originalName: talent });
       }
     }
   }
@@ -204,58 +182,297 @@ export default class WfrpOpenAiDetailsApi {
     return html;
   }
     
-  async prepareActorData(actorInput) {
-    let npc = actorInput.npc;
-    let data = {}; 
-    data.name = npc.name;
-    data.type = "npc";
-    data.system = {};
-    data.system.characteristics = {};
-    data.system.characteristics.ws = { initial: npc.characteristics.weaponSkill };
-    data.system.characteristics.bs = { initial: npc.characteristics.ballisticSkill };
-    data.system.characteristics.s = { initial: npc.characteristics.strength };
-    data.system.characteristics.t = { initial: npc.characteristics.toughness };
-    data.system.characteristics.i = { initial: npc.characteristics.initiative };
-    data.system.characteristics.ag = { initial: npc.characteristics.agility };
-    data.system.characteristics.dex = { initial: npc.characteristics.dexterity };
-    data.system.characteristics.int = { initial: npc.characteristics.intelligence };
-    data.system.characteristics.wp = { initial: npc.characteristics.willPower };
-    data.system.characteristics.fel = { initial: npc.characteristics.fellowship };
+  static #resolveTalentMatch(talents, talentName) {
+    const query = talentName.trim();
+    const queryLower = query.toLowerCase();
+    const queryBase = query.split("(")[0].trim().toLowerCase();
 
-    data.system.details = {};
-    data.system.details.species = { value: npc.details.species };
-    data.system.details.gender = { value: npc.details.gender };
-    data.system.details.haircolour = { value: npc.details.hair };
-    data.system.details.eyecolour = { value: npc.details.eyes };
-    data.system.details.age = { value: npc.details.age };
-    data.system.details.height = { value: npc.details.height };
-    data.system.details.weight = { value: npc.details.weight };
-    let biography = ""; 
-    biography += `<p>${actorInput.description.appearance}</p><hr>`;
-    biography += `<p>${actorInput.description.personality}</p><hr>`;
-    biography += `<p>${actorInput.description.biography}</p><hr>`;
-    biography += `<p>${actorInput.description.motivations}</p><hr>`;
-    biography += `<p>${actorInput.description.specificTraits}</p><hr>`;
-    data.system.details.biography = { value: biography };
-    return data;
+    let matches = talents.filter((talent) =>
+      talent.name === query
+      || talent.flags?.babele?.originalName === query
+      || talent.name.toLowerCase() === queryLower
+      || talent.name.toLowerCase().startsWith(`${queryBase} (`)
+      || talent.flags?.babele?.originalName?.toLowerCase() === queryLower
+    );
+
+    if (!matches.length) {
+      matches = talents
+        .map((talent) => ({
+          talent,
+          index: talent.flags?.babele?.originalName
+            ? Math.min(
+              WfrpOpenAiDetailsApi.levenshtein(talent.name, query),
+              WfrpOpenAiDetailsApi.levenshtein(talent.flags.babele.originalName, query),
+            )
+            : WfrpOpenAiDetailsApi.levenshtein(talent.name, query),
+        }))
+        .filter((entry) => entry.index < 10)
+        .sort((a, b) => a.index - b.index)
+        .map((entry) => entry.talent);
+    }
+
+    if (!matches.length) {
+      return null;
+    }
+
+    const exact = matches.find((talent) => talent.name.toLowerCase() === queryLower);
+    const pick = exact ?? matches[0];
+
+    return {
+      name: pick.name,
+      uuid: pick.uuid,
+      originalName: query,
+    };
   }
-  
+
+  static #createFallbackTalent(name) {
+    const system = foundry.utils.duplicate(game.model.Item.talent);
+    return {
+      name,
+      type: "talent",
+      img: "systems/wfrp4e/icons/blank.png",
+      system,
+    };
+  }
+
+  static #resolveCareerMatch(careers, careerName) {
+    const query = careerName.trim();
+    const queryLower = query.toLowerCase();
+
+    let matches = careers.filter((career) =>
+      career.name === query
+      || career.flags?.babele?.originalName === query
+      || career.name.toLowerCase() === queryLower
+      || career.system?.careergroup?.value?.toLowerCase() === queryLower
+    );
+
+    if (!matches.length) {
+      matches = careers
+        .map((career) => ({
+          career,
+          index: career.flags?.babele?.originalName
+            ? Math.min(
+              WfrpOpenAiDetailsApi.levenshtein(career.name, query),
+              WfrpOpenAiDetailsApi.levenshtein(career.flags.babele.originalName, query),
+            )
+            : WfrpOpenAiDetailsApi.levenshtein(career.name, query),
+        }))
+        .filter((entry) => entry.index < 10)
+        .sort((a, b) => a.index - b.index)
+        .map((entry) => entry.career);
+    }
+
+    if (!matches.length) {
+      return null;
+    }
+
+    const tierOne = matches.filter((career) => Number(career.system?.level?.value ?? 1) === 1);
+    const pick = tierOne[0] ?? matches[0];
+
+    return {
+      name: pick.name,
+      uuid: pick.uuid,
+      originalName: query,
+    };
+  }
+
+  static #createFallbackCareer(name, isCurrent) {
+    const system = foundry.utils.duplicate(game.model.Item.career);
+    system.current.value = isCurrent;
+    return {
+      name,
+      type: "career",
+      img: "systems/wfrp4e/icons/blank.png",
+      system,
+    };
+  }
+
+  static #careerItemData(careerDocument, isCurrent) {
+    const itemData = careerDocument.toObject();
+    delete itemData._id;
+    itemData.system.current = itemData.system.current ?? { value: false };
+    itemData.system.current.value = isCurrent;
+    return itemData;
+  }
+
+  static #characteristicBonus(value) {
+    return Math.floor(Number(value) / 10);
+  }
+
+  /**
+   * WFRP4e max wounds by size (avg: SB + 2×TB + WPB).
+   * @param {{ s: number, t: number, wp: number }} stats
+   * @param {string} size
+   * @returns {number}
+   */
+  static #computeWoundsFromCharacteristics(stats, size = "avg") {
+    const sb = WfrpOpenAiDetailsApi.#characteristicBonus(stats.s);
+    const tb = WfrpOpenAiDetailsApi.#characteristicBonus(stats.t);
+    const wpb = WfrpOpenAiDetailsApi.#characteristicBonus(stats.wp);
+
+    switch (size) {
+      case "tiny":
+        return 1 + tb;
+      case "ltl":
+        return tb;
+      case "sml":
+        return (2 * tb) + wpb;
+      case "lrg":
+        return 2 * (sb + (2 * tb) + wpb);
+      case "enor":
+        return 4 * (sb + (2 * tb) + wpb);
+      case "mnst":
+        return 8 * (sb + (2 * tb) + wpb);
+      case "avg":
+      default:
+        return sb + (2 * tb) + wpb;
+    }
+  }
+
+  static #ensureAutoCalcSettings(system) {
+    system.settings ??= {};
+    system.settings.equipPoints ??= 2;
+    system.settings.autoCalc ??= {};
+    const autoCalc = system.settings.autoCalc;
+    autoCalc.run ??= true;
+    autoCalc.walk ??= true;
+    autoCalc.wounds ??= true;
+    autoCalc.criticals ??= true;
+    autoCalc.corruption ??= true;
+    autoCalc.encumbrance ??= true;
+    autoCalc.size ??= true;
+  }
+
+  static #applyWounds(system, characteristics) {
+    const size = system.details?.size?.value ?? "avg";
+    const wounds = WfrpOpenAiDetailsApi.#computeWoundsFromCharacteristics(
+      {
+        s: characteristics.strength,
+        t: characteristics.toughness,
+        wp: characteristics.willPower,
+      },
+      size,
+    );
+
+    system.status ??= {};
+    system.status.wounds ??= { value: wounds, max: wounds };
+    system.status.wounds.max = wounds;
+    system.status.wounds.value = wounds;
+
+    const tb = WfrpOpenAiDetailsApi.#characteristicBonus(characteristics.toughness);
+    system.status.criticalWounds ??= { value: 0, max: tb };
+    system.status.criticalWounds.max = tb;
+  }
+
+  static #setDetailValue(details, field, value) {
+    if (!details[field]) {
+      details[field] = { value: "" };
+    }
+    details[field].value = value ?? "";
+  }
+
+  async prepareActorData(actorInput) {
+    const npc = actorInput.npc;
+    const system = foundry.utils.duplicate(game.model.Actor.npc);
+    const characteristics = npc.characteristics ?? {};
+
+    system.characteristics.ws.initial = characteristics.weaponSkill;
+    system.characteristics.bs.initial = characteristics.ballisticSkill;
+    system.characteristics.s.initial = characteristics.strength;
+    system.characteristics.t.initial = characteristics.toughness;
+    system.characteristics.i.initial = characteristics.initiative;
+    system.characteristics.ag.initial = characteristics.agility;
+    system.characteristics.dex.initial = characteristics.dexterity;
+    system.characteristics.int.initial = characteristics.intelligence;
+    system.characteristics.wp.initial = characteristics.willPower;
+    system.characteristics.fel.initial = characteristics.fellowship;
+
+    WfrpOpenAiDetailsApi.#ensureAutoCalcSettings(system);
+    WfrpOpenAiDetailsApi.#applyWounds(system, characteristics);
+
+    const { speciesKey, subspeciesKey } = resolveWfrpSpecies(npc.details?.species ?? "");
+    if (!system.details.species) {
+      system.details.species = { value: "", subspecies: "" };
+    }
+    system.details.species.value = speciesKey;
+    system.details.species.subspecies = subspeciesKey;
+    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "gender", npc.details?.gender);
+    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "haircolour", npc.details?.hair);
+    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "eyecolour", npc.details?.eyes);
+    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "age", npc.details?.age);
+    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "height", npc.details?.height);
+    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "weight", npc.details?.weight);
+
+    const utility = getWfrpUtility();
+    const move = utility?.speciesMovement?.(speciesKey, subspeciesKey);
+    if (move) {
+      if (!system.details.move) {
+        system.details.move = { value: 4, walk: 0, run: 0 };
+      }
+      system.details.move.value = move;
+    }
+
+    const biography = [
+      actorInput.description?.appearance,
+      actorInput.description?.personality,
+      actorInput.description?.biography,
+      actorInput.description?.motivations,
+      actorInput.description?.specificTraits,
+    ]
+      .filter(Boolean)
+      .map((paragraph) => `<p>${paragraph}</p>`)
+      .join("<hr>");
+
+    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "biography", biography);
+
+    return {
+      name: npc.name,
+      type: "npc",
+      system,
+    };
+  }
+
   async prepareActorItemsData(actorInput) {
-    let npc = actorInput.npc;
-    let data = [];
-    for (let t of npc.talents) {
-      let talent = await fromUuid(t.uuid);
-      if (talent) {
-        data.push(talent);
+    const npc = actorInput.npc;
+    const careers = [];
+    const talents = [];
+
+    for (const [index, careerRef] of (npc.careers ?? []).entries()) {
+      const isCurrent = index === 0;
+
+      if (careerRef.uuid) {
+        const career = await fromUuid(careerRef.uuid);
+        if (career) {
+          careers.push(WfrpOpenAiDetailsApi.#careerItemData(career, isCurrent));
+          continue;
+        }
       }
+
+      ui.notifications.warn(`Career "${careerRef.name}" was not found in compendiums; creating a blank career entry.`);
+      careers.push(WfrpOpenAiDetailsApi.#createFallbackCareer(careerRef.name, isCurrent));
     }
-    for (let c of npc.careers) {
-      let career = await fromUuid(c.uuid);
-      if (career) {
-        data.push(career);
+
+    for (const talentRef of npc.talents ?? []) {
+      if (talentRef.uuid) {
+        const talent = await fromUuid(talentRef.uuid);
+        if (talent) {
+          const itemData = talent.toObject();
+          delete itemData._id;
+          talents.push(itemData);
+          continue;
+        }
       }
+
+      ui.notifications.warn(`Talent "${talentRef.name}" was not found in compendiums; creating a blank talent entry.`);
+      talents.push(WfrpOpenAiDetailsApi.#createFallbackTalent(talentRef.name));
     }
-    return data;
+
+    const initialItems = await getWfrpNpcInitialItems();
+    for (const item of initialItems) {
+      delete item._id;
+    }
+
+    return initialItems.concat(careers, talents);
   }
   
   static levenshtein(s, t) {

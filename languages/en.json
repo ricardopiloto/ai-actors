@@ -19,11 +19,63 @@
       "SaveImage": "Save Image",
       "ImagePopup": "Image"
     },
-
+    "Errors": {
+      "LlmApiKeyMissing": "Configure the API key for the selected LLM provider in module settings.",
+      "LlmApiKeyMissingNamed": "Configure \"{setting}\" in Configure Settings → Module Settings → AI Generated NPCs.",
+      "OpenRouterConfigMissing": "Configure your OpenRouter API key in module settings.",
+      "OpenRouterImageFailed": "OpenRouter image generation failed for model \"{model}\": {details}",
+      "OpenRouterImageEmpty": "OpenRouter returned no image data."
+    },
+    "Notifications": {
+      "LegacySettingsMigrated": "AI Generated NPCs migrated {count} settings from the previous module version.",
+      "CloudflareRemovedMigrated": "Cloudflare image generation was removed. Image provider switched to OpenRouter — configure your OpenRouter API key in module settings.",
+      "ImageGenerationSkipped": "Portrait generation was skipped. You can save the NPC without an image or use Generate Image to try again."
+    },
     "Settings": {
       "imageFolderLocation": {
         "Name": "Image Folder Location",
         "Hint": "Provide a location where the images will be saved, if folder doesn't exist it will be created"
+      },
+      "LLM": {
+        "llmProvider": {
+          "Name": "LLM Provider",
+          "Hint": "Choose which API generates NPC text and chat responses.",
+          "OpenAI": "OpenAI",
+          "DeepSeek": "DeepSeek"
+        },
+        "deepseekApiKey": {
+          "Name": "DeepSeek API Key",
+          "Hint": "API key from https://platform.deepseek.com/"
+        },
+        "deepseekModel": {
+          "Name": "DeepSeek Model",
+          "Hint": "Model identifier, e.g. deepseek-chat or deepseek-reasoner"
+        }
+      },
+      "Image": {
+        "imageProvider": {
+          "Name": "Image Provider",
+          "Hint": "Choose which API generates NPC portraits and /whisper img images.",
+          "OpenRouter": "OpenRouter",
+          "OpenAI": "OpenAI (DALL-E)",
+          "MidJourney": "MidJourney (Discord)"
+        },
+        "openrouterApiKey": {
+          "Name": "OpenRouter API Key",
+          "Hint": "API key from https://openrouter.ai/settings/keys"
+        },
+        "openrouterImageModel": {
+          "Name": "OpenRouter Image Model",
+          "Hint": "Text-to-image model ID, e.g. black-forest-labs/flux.2-pro"
+        },
+        "openrouterSiteUrl": {
+          "Name": "OpenRouter HTTP-Referer (optional)",
+          "Hint": "Your Foundry site URL for OpenRouter rankings, e.g. https://foundry.example.com"
+        },
+        "openrouterAppName": {
+          "Name": "OpenRouter App Name (optional)",
+          "Hint": "Application name sent to OpenRouter as X-Title."
+        }
       },
       "OpenAI": {
         "historyLength": {
@@ -57,14 +109,14 @@
         "topP": {
           "Name": "Top P",
           "Hint": "Provide a 'top_p' value for the AI to generate NPC, https://platform.openai.com/docs/api-reference/chat/create#chat-create-top_p"
-        },        
+        },
         "imageAdditionalQualities": {
-          "Name": "Dodatkowe cechy portretu",
-          "Hint": "Provide additional properties that will be added into image prompt, np. 'realistic, fantasy, detailed'"
+          "Name": "Additional Portrait Qualities",
+          "Hint": "Additional properties added to the image prompt, e.g. 'realistic, fantasy, detailed'"
         },
         "modelVersion": {
-          "Name": "Open AI Chat GPT Model Version",
-          "Hint": "Provide a Model Version"
+          "Name": "OpenAI Chat Model",
+          "Hint": "OpenAI model used when LLM Provider is set to OpenAI"
         }
       },
       "MJ": {
@@ -102,15 +154,13 @@
       "DefaultSystemPrompt": "You are a helpful and creative assistant to the Game Master in 4th Edition Warhammer Fantasy RPG. You help by providing descriptions and basic characteristics for NPCs, description of places, stories and adventures. Use the lore and history of Warhammer Fantasy World and be inspired by other fantasy literature or movies. Use an artistic style based on novels and stories. Do not use calculations and bullet points.",
       "TechnicalSystemPrompt": " Return the description in html format, without css. Return the response in json format given at the end of prompt. Don't skip any JSON field. In 'description' field put NPC's description\n 1. In apperance field: NPC's face description, body description, clothes. Write  <<noOfSentences>> sentences\n 2. In personality field: NPC's character, his attitude. Write <<noOfSentences>> sentences\n 3. In motivations field: NPc's motiviations, live goals, what drives him. Write <<noOfSentences>> sentences\n 4. In biography field: NPC's biography with events that shaped him. Write <<noOfSentences>> sentences\n 5. In specificTraits field: NPC's special or characteristics features or traits. Write <<noOfSentencesHalved>> sentences",
       "InitialMessage": "Generating NPC Description...",
-
       "ImageMessage": "Generating NPC Image...",
-      "StageImagePrompt": "- Finally, based on all prepared content, prepare description in English for the purpose of generating an Image using Dall-E. The description should start with '<<additionalImageQualities>>. A portrait of'. Return the generated description in JSON format."
+      "StageImagePrompt": "- Finally, based on all prepared content, prepare description in English for the purpose of generating an image. The description should start with '<<additionalImageQualities>>. A portrait of'. Return the generated description in JSON format."
     },
     "WFRP": {
       "StageCharacteristicsPrompt": "1. Based on previous steps, return the NPC's characteristics in JSON format. Fill in the characteristics fields with numerical values on a scale from 1 to 100, where 0 is none, 100 is legendary. in 'name' field write NPC's name, if none provide, propose one.\n 2. Based on previous steps, return the NPC's details in fields: species, gender, age, height, weight, hair, eyes.",
       "StageCareersPrompt": "3. Based on the previous steps, select a <<noOfCareers>> number of career from those available in the English version of WFRP 4ed handbook. Return the selected names in a flat JSON table format. Do not change the case.",
-       "StageTalentsPrompt": "4. Based on previous steps, select <<noOfTalents>> number of Talents from those available in the English version of WFRP 4ed handbook. Return the selected names in a flat JSON table format without any structures. Do not change the case. Do not change values. Don't change the names of talents.",
-
+      "StageTalentsPrompt": "4. Based on previous steps, select <<noOfTalents>> number of Talents from those available in the English version of WFRP 4ed handbook. Return the selected names in a flat JSON table format without any structures. Do not change the case. Do not change values. Don't change the names of talents.",
       "WS": "WS",
       "BS": "BS",
       "S": "S",
@@ -121,7 +171,6 @@
       "Int": "Int",
       "WP": "WP",
       "Fel": "Fel",
-
       "Hair": "Hair",
       "Eyes": "Eyes",
       "Height": "Height",

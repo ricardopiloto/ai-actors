@@ -1,4 +1,5 @@
-import { Constants } from "../actor.mjs";
+import { Constants } from "../constants.mjs";
+import AiSettings from "./ai-settings.mjs";
 
 export default class ActorAiOpenAiApi {
   
@@ -101,7 +102,7 @@ export default class ActorAiOpenAiApi {
         scope: "world",
         config: true,
         restricted: true,
-        default: "Photographic, realistic, subtle, fantasy setting.",
+        default: "Photographic, subtle, fantasy setting, oil painting.",
         hint: `AActors.Settings.OpenAI.${ActorAiOpenAiApi.imageAdditionalQualitiesKey}.Hint`
       });
 
@@ -137,9 +138,10 @@ export default class ActorAiOpenAiApi {
       const temperature = game.settings.get(Constants.ID, ActorAiOpenAiApi.temperatureKey);
       const topP = game.settings.get(Constants.ID, ActorAiOpenAiApi.topPKey);
       const maxTokens = game.settings.get(Constants.ID, ActorAiOpenAiApi.maxTokensKey);
+      const { model } = AiSettings.getLlmConfig();
 
       let data = {
-        model: game.settings.get(Constants.ID, ActorAiOpenAiApi.modelVersion),
+        model,
         frequency_penalty: frequency_penalty,
         presence_penalty: presence_penalty,
         temperature: temperature,
@@ -158,9 +160,8 @@ export default class ActorAiOpenAiApi {
     }
 
     async generateDescription(postData, inputModel) {
-      const url = 'https://api.openai.com/v1/chat/completions';
-      const OPENAI_API_KEY = game.settings.get(Constants.ID, ActorAiOpenAiApi.apiKey); // Replace with your actual API key
-  
+      const { url, apiKey } = AiSettings.assertLlmConfigured();
+
       let prompt = inputModel.TextPrompt;
       let inputMessage =  { "role": "user", "content": 'NPC: ' + prompt };
       postData.messages.push(inputMessage);
@@ -168,11 +169,22 @@ export default class ActorAiOpenAiApi {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(postData)
       });
+
+      if (!response.ok) {
+        let details = "";
+        try {
+          details = JSON.stringify(await response.json());
+        } catch {
+          details = await response.text();
+        }
+        throw new Error(`LLM API error (${response.status}): ${details}`);
+      }
+
       const responseData = await response.json();
       let actorInput = responseData.choices[0].message.content;
       actorInput = JSON.parse(actorInput);

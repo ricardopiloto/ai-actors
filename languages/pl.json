@@ -20,10 +20,64 @@
       "ImagePopup": "Obraz"
     },
 
+    "Errors": {
+      "LlmApiKeyMissing": "Skonfiguruj klucz API dla wybranego dostawcy LLM w ustawieniach modułu.",
+      "LlmApiKeyMissingNamed": "Skonfiguruj \"{setting}\" w Ustawienia → Ustawienia modułu → AI Generated NPCs.",
+      "OpenRouterConfigMissing": "Skonfiguruj klucz API OpenRouter w ustawieniach modułu.",
+      "OpenRouterImageFailed": "Generowanie obrazu OpenRouter nie powiodło się dla modelu \"{model}\": {details}",
+      "OpenRouterImageEmpty": "OpenRouter nie zwrócił danych obrazu."
+    },
+
+    "Notifications": {
+      "LegacySettingsMigrated": "AI Generated NPCs przeniosło {count} ustawień z poprzedniej wersji modułu.",
+      "CloudflareRemovedMigrated": "Generowanie obrazów Cloudflare zostało usunięte. Dostawca obrazów przełączony na OpenRouter — skonfiguruj klucz API OpenRouter w ustawieniach modułu."
+    },
+
     "Settings": {
       "imageFolderLocation": {
         "Name": "Lokalizacja Folderu z generowanymi obrazami",
         "Hint": "Podaj lokalizację folderu, w którym będą zapisywane generowane obrazy, jeśli folder nie istnieje, zostanie utworzony"
+      },
+      "LLM": {
+        "llmProvider": {
+          "Name": "Dostawca LLM",
+          "Hint": "Wybierz API generujące tekst NPC i odpowiedzi na czacie.",
+          "OpenAI": "OpenAI",
+          "DeepSeek": "DeepSeek"
+        },
+        "deepseekApiKey": {
+          "Name": "Klucz API DeepSeek",
+          "Hint": "Klucz API z https://platform.deepseek.com/"
+        },
+        "deepseekModel": {
+          "Name": "Model DeepSeek",
+          "Hint": "Identyfikator modelu, np. deepseek-chat lub deepseek-reasoner"
+        }
+      },
+      "Image": {
+        "imageProvider": {
+          "Name": "Dostawca obrazów",
+          "Hint": "Wybierz API generujące portrety NPC i obrazy z /whisper img.",
+          "OpenRouter": "OpenRouter",
+          "OpenAI": "OpenAI (DALL-E)",
+          "MidJourney": "MidJourney (Discord)"
+        },
+        "openrouterApiKey": {
+          "Name": "Klucz API OpenRouter",
+          "Hint": "Klucz API z https://openrouter.ai/settings/keys"
+        },
+        "openrouterImageModel": {
+          "Name": "Model obrazu OpenRouter",
+          "Hint": "Identyfikator modelu text-to-image, np. black-forest-labs/flux.2-pro"
+        },
+        "openrouterSiteUrl": {
+          "Name": "OpenRouter HTTP-Referer (opcjonalnie)",
+          "Hint": "URL Twojej instancji Foundry dla rankingu OpenRouter, np. https://foundry.example.com"
+        },
+        "openrouterAppName": {
+          "Name": "Nazwa aplikacji OpenRouter (opcjonalnie)",
+          "Hint": "Nazwa wysyłana do OpenRouter w nagłówku X-Title."
+        }
       },
       "OpenAI": {
         "historyLength": {

@@ -1,35 +1,37 @@
+import { Constants } from "./constants.mjs";
 
-import { Constants } from "./actor.mjs";
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const HandlebarsApplication = HandlebarsApplicationMixin(ApplicationV2);
 
-/* FormApplication for ai actors */
-export default class ActorAiImagePopup extends FormApplication {
-    static get defaultOptions() {
-        const defaults = super.defaultOptions;
-        const title = game.i18n.localize('AActors.General.ImagePopup');
-      
-        const overrides = {
-            // height: 'auto',
-            width: '600',
-            height: '400',
-            template: Constants.TEMPLATES.IMAGEPOPUP,
-            title: title,
-            userId: game.userId,
-            resizable: true,
-            classes: defaults.classes.concat(["actor-ai"]),
-            closeOnSubmit: false, // do not close when submitted
-        };
-      
-        const mergedOptions = foundry.utils.mergeObject(defaults, overrides);
-        return mergedOptions;
-    }
-    async getData() { 
-        const data = await super.getData();
-        data.image = this.image;
-        return data;
-    }
+export default class ActorAiImagePopup extends HandlebarsApplication {
+  static DEFAULT_OPTIONS = {
+    id: "actor-ai-image-popup",
+    classes: ["actor-ai", "themed", "theme-light"],
+    tag: "div",
+    window: {
+      title: "AActors.General.ImagePopup",
+      resizable: true,
+    },
+    position: {
+      width: 600,
+      height: 400,
+    },
+  };
 
-    constructor(...args) {
-        super(...args);
-        this.image = args[0].image;
-    }
+  static PARTS = {
+    content: {
+      template: Constants.TEMPLATES.IMAGEPOPUP,
+    },
+  };
+
+  constructor(options = {}) {
+    super(options);
+    this.image = options.image ?? "";
+  }
+
+  async _prepareContext() {
+    return {
+      image: this.image,
+    };
+  }
 }

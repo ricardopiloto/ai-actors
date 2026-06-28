@@ -1,4 +1,4 @@
-import { Constants } from "../actor.mjs";
+import { Constants } from "../constants.mjs";
 import ActorAiOpenAiApi from "./actor-ai-open-ai-api.mjs";
 
 export default class ImageOpenAiApi {

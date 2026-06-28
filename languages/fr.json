@@ -20,10 +20,64 @@
       "ImagePopup": "Image"
     },
 
+    "Errors": {
+      "LlmApiKeyMissing": "Configurez la clé API du fournisseur LLM sélectionné dans les paramètres du module.",
+      "LlmApiKeyMissingNamed": "Configurez \"{setting}\" dans Configuration → Paramètres du module → AI Generated NPCs.",
+      "OpenRouterConfigMissing": "Configurez votre clé API OpenRouter dans les paramètres du module.",
+      "OpenRouterImageFailed": "Échec de la génération d'image OpenRouter pour le modèle \"{model}\" : {details}",
+      "OpenRouterImageEmpty": "OpenRouter n'a renvoyé aucune image."
+    },
+
+    "Notifications": {
+      "LegacySettingsMigrated": "AI Generated NPCs a migré {count} paramètres depuis l'ancienne version du module.",
+      "CloudflareRemovedMigrated": "La génération d'images Cloudflare a été supprimée. Le fournisseur d'images a été basculé vers OpenRouter — configurez votre clé API OpenRouter dans les paramètres du module."
+    },
+
     "Settings": {
       "imageFolderLocation": {
         "Name": "Dossier des images",
         "Hint": "Indique le dossier dans lequel les images seront sauvegardées. Si le dossier n'existe pas, il sera créé."
+      },
+      "LLM": {
+        "llmProvider": {
+          "Name": "Fournisseur LLM",
+          "Hint": "Choisissez l'API qui génère le texte des PNJ et les réponses du chat.",
+          "OpenAI": "OpenAI",
+          "DeepSeek": "DeepSeek"
+        },
+        "deepseekApiKey": {
+          "Name": "Clé API DeepSeek",
+          "Hint": "Clé API depuis https://platform.deepseek.com/"
+        },
+        "deepseekModel": {
+          "Name": "Modèle DeepSeek",
+          "Hint": "Identifiant du modèle, ex. deepseek-chat ou deepseek-reasoner"
+        }
+      },
+      "Image": {
+        "imageProvider": {
+          "Name": "Fournisseur d'images",
+          "Hint": "Choisissez l'API qui génère les portraits et les images /whisper img.",
+          "OpenRouter": "OpenRouter",
+          "OpenAI": "OpenAI (DALL-E)",
+          "MidJourney": "MidJourney (Discord)"
+        },
+        "openrouterApiKey": {
+          "Name": "Clé API OpenRouter",
+          "Hint": "Clé API depuis https://openrouter.ai/settings/keys"
+        },
+        "openrouterImageModel": {
+          "Name": "Modèle d'image OpenRouter",
+          "Hint": "ID du modèle text-to-image, ex. black-forest-labs/flux.2-pro"
+        },
+        "openrouterSiteUrl": {
+          "Name": "OpenRouter HTTP-Referer (optionnel)",
+          "Hint": "URL de votre site Foundry pour le classement OpenRouter, ex. https://foundry.example.com"
+        },
+        "openrouterAppName": {
+          "Name": "Nom d'application OpenRouter (optionnel)",
+          "Hint": "Nom envoyé à OpenRouter dans l'en-tête X-Title."
+        }
       },
       "OpenAI": {
         "historyLength": {
