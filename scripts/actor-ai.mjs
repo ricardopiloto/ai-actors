@@ -1,13 +1,20 @@
 import ActorAiOpenAiApi from "./api/actor-ai-open-ai-api.mjs";
 import ActorAiImagePopup from "./actor-ai-image-popup.mjs";
-import WfrpOpenAiDetailsApi from "./api/wfrp-open-ai-details.mjs";
+import { getSystemAdapter } from "./api/system-adapter-factory.mjs";
 import AiSettings from "./api/ai-settings.mjs";
 import { Constants } from "./constants.mjs";
 import { getImageApi } from "./api/image-provider.mjs";
 import "./api/ai-settings.mjs";
 import InputModel from "./model/input-model.mjs";
 import { getActorFolders } from "./compat.mjs";
-import { getApplicationForm, HandlebarsApplication, WFRP_DIALOG_CLASSES } from "./applications/handlebars-application.mjs";
+import { getApplicationForm, HandlebarsApplication, scheduleAutoFit, WFRP_DIALOG_CLASSES } from "./applications/handlebars-application.mjs";
+
+const ACTOR_AUTO_FIT = {
+  minWidth: 700,
+  minHeight: 400,
+  fitWidth: false,
+  measureSelector: ".actor-ai",
+};
 
 export default class ActorAi extends HandlebarsApplication {
   static DEFAULT_OPTIONS = {
@@ -21,7 +28,7 @@ export default class ActorAi extends HandlebarsApplication {
     },
     position: {
       width: 700,
-      height: 700,
+      height: 400,
     },
     form: {
       submitOnChange: false,
@@ -38,7 +45,6 @@ export default class ActorAi extends HandlebarsApplication {
     form: {
       template: Constants.TEMPLATES.ACTOR,
       root: true,
-      scrollable: [".actor-ai-scroll"],
     },
   };
 
@@ -69,7 +75,7 @@ export default class ActorAi extends HandlebarsApplication {
     this.actor = null;
     this.actorInput = options.actorInput ?? {};
     this.api = new ActorAiOpenAiApi();
-    this.apiDetails = new WfrpOpenAiDetailsApi();
+    this.apiDetails = getSystemAdapter();
     this.apiImage = getImageApi();
 
     this.context = {
@@ -106,6 +112,11 @@ export default class ActorAi extends HandlebarsApplication {
     }
 
     return data;
+  }
+
+  _onRender(context, options) {
+    super._onRender(context, options);
+    scheduleAutoFit(this, ACTOR_AUTO_FIT);
   }
 
   async #runGenerationPipeline() {
@@ -221,16 +232,10 @@ export default class ActorAi extends HandlebarsApplication {
     const actor = await Actor.create(actorData, { skipItems: true });
 
     if (items.length > 0) {
-      await actor.createEmbeddedDocuments("Item", items, { skipSpecialisationChoice: true });
+      await actor.createEmbeddedDocuments("Item", items, this.apiDetails.getItemCreateOptions());
     }
 
-    if (typeof actor.system.computeWounds === "function") {
-      const wounds = actor.system.computeWounds();
-      await actor.update({
-        "system.status.wounds.max": wounds,
-        "system.status.wounds.value": wounds,
-      });
-    }
+    await this.apiDetails.afterActorCreated(actor);
 
     this.close();
     actor.sheet.render(true);

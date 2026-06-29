@@ -1,5 +1,36 @@
 /* Layout only — visual theme is provided by WFRP4e warhammer/standard-form classes. */
 
+/* Auto-fit: let content define natural size; window is resized via JS. */
+.application.actor-ai-auto-fit:not(.actor-ai-constrained) .window-content {
+    overflow: visible;
+    min-height: unset;
+    height: auto;
+}
+
+.application.actor-ai-auto-fit:not(.actor-ai-constrained) .window-content > form,
+.application.actor-ai-auto-fit:not(.actor-ai-constrained) .actor-ai,
+.application.actor-ai-auto-fit:not(.actor-ai-constrained) .actor-ai-gen-window,
+.application.actor-ai-auto-fit:not(.actor-ai-constrained) .actor-ai-scroll {
+    overflow: visible;
+    min-height: unset;
+    flex: 0 1 auto;
+}
+
+.application.actor-ai-auto-fit.actor-ai-constrained .actor-ai-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.application.actor-ai-auto-fit:not(.actor-ai-constrained) .actor-ai-image-popup {
+    height: auto;
+}
+
+.application.actor-ai-auto-fit:not(.actor-ai-constrained) .actor-ai-image-popup .actor-ai-image {
+    max-height: none;
+}
+
 .application.actor-ai .window-content {
     display: flex;
     flex-direction: column;

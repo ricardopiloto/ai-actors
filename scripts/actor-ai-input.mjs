@@ -1,7 +1,15 @@
 import { Constants } from "./constants.mjs";
 import ActorAi from "./actor-ai.mjs";
 import AiSettings from "./api/ai-settings.mjs";
-import { getApplicationForm, HandlebarsApplication, WFRP_DIALOG_CLASSES } from "./applications/handlebars-application.mjs";
+import { getSystemAdapter, isSystemSupported } from "./api/system-adapter-factory.mjs";
+import { buildSystemFieldContext, collectInputFieldValues } from "./api/system-adapter.mjs";
+import { getApplicationForm, HandlebarsApplication, scheduleAutoFit, WFRP_DIALOG_CLASSES } from "./applications/handlebars-application.mjs";
+
+const INPUT_AUTO_FIT = {
+  minWidth: 420,
+  minHeight: 200,
+  measureSelector: ".actor-ai",
+};
 
 export default class ActorAiInput extends HandlebarsApplication {
   static DEFAULT_OPTIONS = {
@@ -15,7 +23,7 @@ export default class ActorAiInput extends HandlebarsApplication {
     },
     position: {
       width: 500,
-      height: 350,
+      height: 200,
     },
     form: {
       submitOnChange: false,
@@ -30,13 +38,13 @@ export default class ActorAiInput extends HandlebarsApplication {
     form: {
       template: Constants.TEMPLATES.INPUT,
       root: true,
-      scrollable: [""],
     },
   };
 
   constructor(options = {}) {
     super(options);
     this.inputData = options.inputData ?? { userId: game.userId };
+    this.systemAdapter = getSystemAdapter();
   }
 
   async _prepareContext(options) {
@@ -44,12 +52,35 @@ export default class ActorAiInput extends HandlebarsApplication {
     return foundry.utils.mergeObject(context, {
       description: this.inputData.textInput ?? "",
       complexity: this.inputData.complexity ?? "",
-      noOfCareers: this.inputData.noOfCareers ?? "",
-      noOfTalents: this.inputData.noOfTalents ?? "",
+      systemFields: buildSystemFieldContext(this.systemAdapter, this.inputData),
     });
   }
 
+  _onRender(context, options) {
+    super._onRender(context, options);
+    scheduleAutoFit(this, INPUT_AUTO_FIT);
+    const form = getApplicationForm(this);
+    const npcType = form?.querySelector('[name="npcType"]');
+    if (npcType && !npcType.dataset.aiActorsBound) {
+      npcType.dataset.aiActorsBound = "true";
+      npcType.addEventListener("change", () => ActorAiInput.#onRefreshFields.call(this));
+    }
+  }
+
+  static #onRefreshFields(_event, _target) {
+    const form = getApplicationForm(this);
+    this.inputData.textInput = form?.querySelector('[name="description"]')?.value ?? "";
+    this.inputData.complexity = form?.querySelector('[name="complexity"]')?.value ?? "";
+    foundry.utils.mergeObject(this.inputData, collectInputFieldValues(this.systemAdapter, form));
+    this.render(false);
+  }
+
   static #onSend(_event, _target) {
+    if (!isSystemSupported()) {
+      ui.notifications.error(game.i18n.format("AActors.Errors.UnsupportedSystem", { system: game.system.id }));
+      return;
+    }
+
     try {
       AiSettings.assertLlmConfigured();
     } catch (error) {
@@ -60,10 +91,9 @@ export default class ActorAiInput extends HandlebarsApplication {
     const form = getApplicationForm(this);
     this.inputData.textInput = form?.querySelector('[name="description"]')?.value ?? "";
     this.inputData.complexity = form?.querySelector('[name="complexity"]')?.value ?? "";
-    this.inputData.noOfCareers = Number(form?.querySelector('[name="noOfCareers"]')?.value ?? 0);
-    this.inputData.noOfTalents = Number(form?.querySelector('[name="noOfTalents"]')?.value ?? 0);
+    foundry.utils.mergeObject(this.inputData, collectInputFieldValues(this.systemAdapter, form));
 
-    const payload = foundry.utils.deepClone(this.inputData);
+    const payload = foundry.utils.mergeObject(this.inputData);
     this.close();
     new ActorAi({ actorInput: payload }).render(true);
   }

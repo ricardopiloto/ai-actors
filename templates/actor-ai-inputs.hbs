@@ -14,18 +14,28 @@
             </select>
         </div>
     </div>
-    <div class="form-group">
-        <label>{{localize "AActors.General.NoOfCareersPlaceholder"}}</label>
-        <div class="form-fields">
-            <input name="noOfCareers" type="number" value="{{noOfCareers}}" placeholder="{{localize "AActors.General.NoOfCareersPlaceholder"}}" data-dtype="Number">
-        </div>
-    </div>
-    <div class="form-group">
-        <label>{{localize "AActors.General.NoOfTalentsPlaceholder"}}</label>
-        <div class="form-fields">
-            <input name="noOfTalents" type="number" value="{{noOfTalents}}" placeholder="{{localize "AActors.General.NoOfTalentsPlaceholder"}}" data-dtype="Number">
-        </div>
-    </div>
+    {{#each systemFields}}
+        {{#if visible}}
+            <div class="form-group{{#if stacked}} stacked{{/if}}">
+                <label>{{label}}</label>
+                {{#if (eq type "select")}}
+                    <div class="form-fields">
+                        <select name="{{name}}" data-dtype="String">
+                            {{#each options}}
+                                <option value="{{value}}"{{#if (eq ../value value)}} selected{{/if}}>{{label}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                {{else if (eq type "number")}}
+                    <div class="form-fields">
+                        <input name="{{name}}" type="number" value="{{value}}" placeholder="{{placeholder}}" data-dtype="Number" min="1" max="20">
+                    </div>
+                {{else}}
+                    <textarea name="{{name}}">{{value}}</textarea>
+                {{/if}}
+            </div>
+        {{/if}}
+    {{/each}}
     <footer class="form-footer">
         <button type="button" title="{{localize "AActors.General.Send"}}" data-action="send">
             <i class="fa-solid fa-up-long"></i> {{localize "AActors.General.Send"}}

@@ -20,6 +20,9 @@
       "SaveImage": "Zapisz Obraz",
       "ImagePopup": "Obraz"
     },
+    "Chat": {
+      "HistoryReset": "Historia czatu AI została wyczyszczona."
+    },
     "Errors": {
       "LlmApiKeyMissing": "Skonfiguruj klucz API dla wybranego dostawcy LLM w ustawieniach modułu.",
       "LlmApiKeyMissingNamed": "Skonfiguruj \"{setting}\" w Ustawienia → Ustawienia modułu → AI Generated NPCs.",

@@ -20,6 +20,9 @@
       "SaveImage": "Save Image",
       "ImagePopup": "Image"
     },
+    "Chat": {
+      "HistoryReset": "AI chat history cleared."
+    },
     "Errors": {
       "LlmApiKeyMissing": "Configure the API key for the selected LLM provider in module settings.",
       "LlmApiKeyMissingNamed": "Configure \"{setting}\" in Configure Settings → Module Settings → AI Generated NPCs.",
@@ -29,6 +32,8 @@
       "ImagePromptEmpty": "The image prompt is empty.",
       "ImagePromptPolicyViolation": "The image prompt violates content policies for image generation. Edit the prompt and try again.",
       "ImagePromptUnfixable": "The image prompt could not be made compliant with content policies. Edit the prompt manually and try again.",
+      "UnsupportedSystem": "AI Generated NPCs does not support the \"{system}\" system.",
+      "UnsupportedSystemHint": "AI Generated NPCs supports WFRP4e and D&D5e. The active system is \"{system}\".",
       "LlmJsonInvalid": "The LLM returned invalid JSON: {details}. Try lowering temperature or reducing description complexity.",
       "LlmJsonTruncated": "The LLM response was cut off before the JSON finished (increase Max Tokens in module settings)."
     },
@@ -188,6 +193,40 @@
       "Description": "Description",
       "Careers": "Careers",
       "Talents": "Talents"
+    },
+    "DND5E": {
+      "NpcType": "NPC Type",
+      "NpcTypeCharacter": "Character with Class",
+      "NpcTypeCreature": "Creature (Challenge Rating)",
+      "ClassLevel": "Class Level (optional)",
+      "ClassLevelPlaceholder": "Defaults to 1 if omitted",
+      "ChallengeRating": "Challenge Rating",
+      "CreatureType": "Creature Type",
+      "NoOfFeats": "Number of Feats",
+      "NoOfSkills": "Number of Proficient Skills",
+      "StageAbilityScores": "Generating ability scores...",
+      "StageRoleProfile": "Generating class or creature profile...",
+      "StageFeatsAndSkills": "Selecting feats and skills...",
+      "StageAbilityScoresPrompt": "1. Based on previous steps, return the NPC in JSON format. Fill abilityScores with base values from 8 to 16 (before racial adjustments): str, dex, con, int, wis, cha. Set name if not provided. 2. Return details: race, gender, age (integer years), size (tiny, sm, med, lg, huge, grg), alignment, speed (walk speed in feet, default 30).",
+      "StageClassPrompt": "3. This NPC is a character with class levels. Set character.class to one exact name from this SRD list only: <<classList>>. Set character.level to <<classLevel>>.",
+      "StageCreaturePrompt": "3. This NPC is a creature stat block. Set creature.type (e.g. humanoid, beast), creature.challengeRating (e.g. 1/4, 1, 5), creature.armorClass (integer), and creature.hitPoints (integer).",
+      "StageFeatsAndSkillsPrompt": "4. Select <<noOfFeats>> feat(s) from this SRD list only: <<featList>>. Select <<noOfSkills>> proficient skill(s) from this SRD list only: <<skillList>>. Return flat JSON arrays feats and skills with exact English names.",
+      "STR": "STR",
+      "DEX": "DEX",
+      "CON": "CON",
+      "INT": "INT",
+      "WIS": "WIS",
+      "CHA": "CHA",
+      "Race": "Race",
+      "Gender": "Gender",
+      "Age": "Age",
+      "Class": "Class",
+      "Level": "Level",
+      "ArmorClass": "AC",
+      "HitPoints": "HP",
+      "Description": "Description",
+      "Feats": "Feats",
+      "Skills": "Skills"
     }
   }
 }

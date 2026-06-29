@@ -18,6 +18,11 @@
         "id": "wfrp4e",
         "type": "system",
         "compatibility": {}
+      },
+      {
+        "id": "dnd5e",
+        "type": "system",
+        "compatibility": {}
       }
     ]
   },

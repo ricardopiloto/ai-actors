@@ -1,36 +1,79 @@
 # AI Generated NPCs
 
-AI Generated NPCs is a Foundry VTT Module that creates detailed NPCs using ChatGPT / Openrouter for their portraits. 
+AI Generated NPCs is a Foundry VTT module that creates detailed NPCs using an LLM (OpenAI, Anthropic, or DeepSeek) and generates portraits via OpenRouter or OpenAI DALL-E.
 
-![image](https://raw.githubusercontent.com/silentmark/ai-actors/main/other/img1.png)
+Repository: [ricardopiloto/ai-actors](https://github.com/ricardopiloto/ai-actors)
 
+![Generate NPC window](other/img1.png)
 
-Currently suppoerted system:
-- WFRP 4e
+## Compatibility
 
-Currently supported languages:
-- English
-- Polish
+| | |
+|---|---|
+| **Foundry VTT** | v13–v14 |
+| **Game systems** | [WFRP 4e](https://foundryvtt.com/packages/wfrp4e) (`wfrp4e`), [D&D 5e](https://foundryvtt.com/packages/dnd5e) (`dnd5e`) |
+| **Languages** | English, Polish, French |
 
-### Generating your NPC characters
+The module detects the active system automatically (`game.system.id`) and adapts the input form, LLM prompts, preview, and created Actor sheet.
 
-In the Actor tab, there is new button: Generate NPC
+### WFRP 4e
 
-Generate NPC will open a new window where you can provide simple description about desired NPC. Type a description of your character and click on the Generate button. This takes a minute for ChatGPT to create, so please be patient. Once the character and an image have been generated, they will show in the window. From here you can save it as an actory or just use it ad-hoc. If the image generated does not fit your vision of this character, you can edit its description and regenerate the image using the button under the image. If you have a folder you would like this character to be placed in, you can choose from the drop down list of folders. Not selecting a specific folder will place the actor in the top-level folder. Clicking the "Save NPC" button will create an Actor based on ChatGPT's generation. 
+Generates characteristics, careers, talents, wounds, and species data aligned with WFRP4e rules. Input fields include number of careers and talents.
 
-![image](https://raw.githubusercontent.com/silentmark/ai-actors/main/other/img2.png)
+### D&D 5e
 
-### Settings
+Supports two NPC types:
 
-![image](https://raw.githubusercontent.com/silentmark/ai-actors/main/other/img3.png)
+- **Character with Class** — SRD classes, ability scores, feats, and skills. Class level can be set in the form, parsed from the description, or defaults to 1 when omitted.
+- **Creature (Challenge Rating)** — creature type, CR, AC, and HP for stat-block style NPCs.
 
-You will need API Key from Open-AI https://platform.openai.com/api-keys
+D&D content is limited to the **SRD** (no compendium lookups). D&D-specific UI strings are in English only (`en.json`).
 
-to return correct format. Below is a sample System Prompt for WFRP in English, Polish and French (thanks LeRatierBretonnien):
+## Installation
+
+1. Install the module in Foundry (manifest URL from the [releases page](https://github.com/ricardopiloto/ai-actors/releases)).
+2. Enable **AI Generated NPCs** in your world.
+3. Open **Configure Settings → Module Settings → AI Generated NPCs** and set at least one LLM provider (and image provider, if you want portraits).
+
+## Generating an NPC
+
+In the **Actors** directory, click **Generate AI NPC** (GM only).
+
+1. Enter a short description and choose a **details complexity** (simple / medium / complex).
+2. Fill in any system-specific fields (WFRP careers/talents, or D&D NPC type, class level, CR, etc.).
+3. Click **Send to AI**. Generation runs in stages and may take a minute.
+4. Review the preview (description, stats, and portrait). Edit the image prompt and use **Generate Image** if you want a different portrait.
+5. Optionally pick a folder, then click **Save Actor**.
+
+Windows resize automatically to fit their content.
+
+![NPC preview](other/img2.png)
+
+## Settings
+
+Configure the module under **Configure Settings → Module Settings → AI Generated NPCs**. Settings are grouped by provider; only fields relevant to the selected LLM and image provider are shown.
+
+![Module settings](other/img3.png)
+
+### LLM (NPC text and chat)
+
+Choose one provider and set its API key and model:
+
+| Provider | Notes |
+|---|---|
+| **OpenAI** | Default. Also used for shared options (system prompt, temperature, max tokens). |
+| **Anthropic** | Claude models via Anthropic API. |
+| **DeepSeek** | e.g. `deepseek-chat`. |
+
+You will need an API key from your chosen provider (e.g. [OpenAI](https://platform.openai.com/api-keys), [Anthropic](https://console.anthropic.com/), [DeepSeek](https://platform.deepseek.com/)).
+
+The **system prompt** should match your game system and language. Example for WFRP 4e in English:
 
 ```
 You are a helpful and creative assistant to the Game Master in 4th Edition Warhammer Fantasy RPG. You help by providing descriptions and basic characteristics for NPCs, description of places, stories and adventures. Use the lore and history of Warhammer Fantasy World and be inspired by other fantasy literature or movies. Use an artistic style based on novels and stories. Do not use calculations and bullet points.
 ```
+
+Polish and French WFRP examples from the original module:
 
 ```
 Jesteś pomocnym i kreatywnym asystentem Mistrza Gry w 4. edycji Warhammer Fantasy RPG. Pomagasz, podając opisy i podstawowe cechy dla Bohaterów Niezależnych, opisy miejsc, wydarzeń oraz przygód. Korzystaj z opisu świata i historii Warhammer Fantasy, korzystaj z inspiracji innymi dziełami literatury fantasy. Używaj systemu metrycznego. Używaj stylu artystycznego, typowego dla powieści i opowiadań. Nie kopiuj zwrotów użytych w zapytaniu. Nie używaj wyliczeń i wypunktowań.
@@ -40,30 +83,56 @@ Jesteś pomocnym i kreatywnym asystentem Mistrza Gry w 4. edycji Warhammer Fanta
 Vous êtes un assistant utile et créatif du Maitre de Jeu dans la 4e édition de Warhammer Fantasy RPG. Vous aidez en fournissant des descriptions et des caractéristiques de base pour les PNJ, des descriptions de lieux, des histoires et des aventures. Utilisez les traditions et l'histoire de Warhammer Fantasy World et laissez-vous inspirer par d'autres littératures ou films fantastiques. Utilisez un style artistique basé sur des romans et des histoires. N'utilisez pas de calculs ni de puces.
 ```
 
-#### Image Generation
+### Image generation
 
-Portrait generation can be done using Dall-E or MidJourney. If you would like to use MidJourney, all you have to do is to provide necessary configuration entries. Lack of them will fall back to Dall-E. Since MidJourney doesn't provide native API, to mimic discord prompts, please follow this [Guide](https://medium.com/@useapi.net/interact-with-midjourney-using-discord-api-5a2e150f5e97) to get necessary values. 
+| Provider | Notes |
+|---|---|
+| **OpenRouter** | Default. Supports many image models via [OpenRouter](https://openrouter.ai/). |
+| **OpenAI** | DALL-E via OpenAI API key. |
 
-#### Chat Prompts
+Portrait prompts are validated against content policies before being sent to the API. Non-compliant prompts are adjusted automatically when possible.
 
-There are two promts that can be used on chat: ```/whisper ai <<promt>>``` will generate any content from chat GPT using as context (suystem prompt) default configuration, i.e.:
+Set **Image Folder Location** to control where saved portraits are stored in your Foundry data.
 
-**IMPORTANT NOTE:** this prompt will preserve the context of messages during session (until page reload). that means, from one hand, you can have a conversation with chat bot preserving the context of all messages, but it will increase signifcantly cost, as all messages will be send back and forth during conversation. To reset this behavior, either configure message history length to 0 or use command ```/whisper gpt-reset``` to clear message history
+## Chat commands
 
-![image](https://raw.githubusercontent.com/silentmark/ai-actors/main/other/img4.png)
+Use the chat to interact with the configured LLM or image provider without opening the NPC workflow. Responses are posted as **private messages** visible only to you.
 
-Second prompt is ```/whisper img <<prompt>>``` will generate an image based on provided description, there is no additional context included. It will allow you to either save the image or copy to clipboard (may not work if you don't have https) i.e. 
+`ai`, `img`, and `gpt-reset` are **virtual recipients** — they are not Foundry users. The module intercepts these before the core whisper handler runs (including on Foundry v14).
 
-![image](https://raw.githubusercontent.com/silentmark/ai-actors/main/other/img5.png)
-![image](https://raw.githubusercontent.com/silentmark/ai-actors/main/other/img6.png)
+| Command | Description |
+|---|---|
+| `/whisper ai <prompt>` | Generate text with the configured LLM and system prompt |
+| `/w ai <prompt>` | Short alias for the above |
+| `/ai <prompt>` | Direct shortcut (no whisper prefix) |
+| `/whisper img <prompt>` | Generate an image with the configured image provider |
+| `/w img <prompt>` | Short alias for the above |
+| `/img <prompt>` | Direct shortcut (no whisper prefix) |
+| `/whisper gpt-reset` | Clear the in-session AI conversation history |
 
-#### Final Remarks
+### Text chat (`/whisper ai` or `/ai`)
 
-This is initial version of the module and it still has a lot to do. If you would like to help me with supporting other systems, found bug or would like to suggest a feature, feel free to open a PR or Issue. 
+Conversation context is kept for the session (until reload). A longer **message history** setting preserves more context but increases API cost. Set history length to `0` or run `/whisper gpt-reset` to clear it.
 
-#### Special thanks to [Rachel Schutz](https://github.com/rachsg7) whoms original module was an inspiration to create this one. 
+![Chat AI example](other/img4.png)
 
-#### TODO: 
+### Image chat (`/whisper img` or `/img`)
+
+Generates an image from the description. You can save the image or copy it to the clipboard (clipboard may require HTTPS).
+
+![Chat image example](other/img5.png)
+![Chat image save](other/img6.png)
+
+## Contributing
+
+This module is under active development. Bug reports, feature suggestions, and pull requests are welcome — especially adapters for additional game systems.
+
+## Credits
+
+Inspired by [Rachel Schutz](https://github.com/rachsg7)'s original module.
+
+Maintained by [Ricardo Sobral](https://github.com/ricardopiloto).
+
+## Roadmap
 
 - Save NPCs and their prompts as Journal Pages
-- Dedicated Settings App

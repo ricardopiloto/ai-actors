@@ -1,7 +1,7 @@
-import InputModel from "../model/input-model.mjs";
-import { findWfrpCareer, findWfrpItems, findWfrpTalent, getWfrpNpcInitialItems, getWfrpUtility, resolveWfrpSpecies } from "../compat.mjs";
+import SystemAdapter from "./system-adapter.mjs";
+import { findWfrpCareer, findWfrpItems, findWfrpTalent, getWfrpNpcInitialItems, getWfrpUtility, resolveWfrpSpecies } from "./wfrp-compat.mjs";
 
-export default class WfrpOpenAiDetailsApi {
+export default class WfrpSystemAdapter extends SystemAdapter {
   
   static careers = null;
   static talents = null;
@@ -14,12 +14,33 @@ export default class WfrpOpenAiDetailsApi {
     ];
   }
 
-  async updateStageInputModel(stage, inputModel, actorInput) {
-    if (WfrpOpenAiDetailsApi.careers === null) {
-      WfrpOpenAiDetailsApi.careers = await findWfrpItems("career");
+  get inputFields() {
+    return [
+      { name: "noOfCareers", type: "number", label: "AActors.General.NoOfCareersPlaceholder", default: 1 },
+      { name: "noOfTalents", type: "number", label: "AActors.General.NoOfTalentsPlaceholder", default: 3 },
+    ];
+  }
+
+  async afterActorCreated(actor) {
+    if (typeof actor.system.computeWounds === "function") {
+      const wounds = actor.system.computeWounds();
+      await actor.update({
+        "system.status.wounds.max": wounds,
+        "system.status.wounds.value": wounds,
+      });
     }
-    if (WfrpOpenAiDetailsApi.talents === null) {
-      WfrpOpenAiDetailsApi.talents = await findWfrpItems("talent");
+  }
+
+  getItemCreateOptions() {
+    return { skipSpecialisationChoice: true };
+  }
+
+  async updateStageInputModel(stage, inputModel, actorInput) {
+    if (WfrpSystemAdapter.careers === null) {
+      WfrpSystemAdapter.careers = await findWfrpItems("career");
+    }
+    if (WfrpSystemAdapter.talents === null) {
+      WfrpSystemAdapter.talents = await findWfrpItems("talent");
     }
 
     if (stage.stage === "characteristics") { 
@@ -47,7 +68,7 @@ export default class WfrpOpenAiDetailsApi {
       inputModel.JsonFormat.npc.details.hair = "";
       inputModel.JsonFormat.npc.details.eyes = "";
     } else if (stage.stage === "careers") {
-      const careerNames = WfrpOpenAiDetailsApi.#getTier1CareerNameList(WfrpOpenAiDetailsApi.careers);
+      const careerNames = WfrpSystemAdapter.#getTier1CareerNameList(WfrpSystemAdapter.careers);
       const careersMessage = game.i18n.localize("AActors.WFRP.StageCareersPrompt")
         .replaceAll("<<noOfCareers>>", actorInput.noOfCareers)
         .replaceAll("<<careerList>>", careerNames.join(", "));
@@ -86,14 +107,14 @@ export default class WfrpOpenAiDetailsApi {
       npc.details.age = Math.floor(Math.random() * 20 - 10) + parseInt(npc.details.age);
     }
 
-    WfrpOpenAiDetailsApi.#normalizeHeightWeight(npc.details);
+    WfrpSystemAdapter.#normalizeHeightWeight(npc.details);
 
     for (let career of originalCareers) {
-      const match = await WfrpOpenAiDetailsApi.#resolveCareerMatch(WfrpOpenAiDetailsApi.careers, career);
+      const match = await WfrpSystemAdapter.#resolveCareerMatch(WfrpSystemAdapter.careers, career);
       if (match) {
         npc.careers.push(match);
       } else {
-        const label = WfrpOpenAiDetailsApi.#normalizeItemQuery(career, /^career\s*name$/i);
+        const label = WfrpSystemAdapter.#normalizeItemQuery(career, /^career\s*name$/i);
         if (label) {
           npc.careers.push({ name: label, uuid: null, originalName: label });
         }
@@ -101,11 +122,11 @@ export default class WfrpOpenAiDetailsApi {
     }
 
     for (let talent of originalTalents) {
-      const match = await WfrpOpenAiDetailsApi.#resolveTalentMatch(WfrpOpenAiDetailsApi.talents, talent);
+      const match = await WfrpSystemAdapter.#resolveTalentMatch(WfrpSystemAdapter.talents, talent);
       if (match) {
         npc.talents.push(match);
       } else {
-        const label = WfrpOpenAiDetailsApi.#normalizeItemQuery(talent, /^talent\s*name$/i);
+        const label = WfrpSystemAdapter.#normalizeItemQuery(talent, /^talent\s*name$/i);
         if (label) {
           npc.talents.push({ name: label, uuid: null, originalName: label });
         }
@@ -218,7 +239,7 @@ export default class WfrpOpenAiDetailsApi {
   }
 
   static async #resolveCareerMatch(careers, careerName) {
-    const query = WfrpOpenAiDetailsApi.#normalizeItemQuery(careerName, /^career\s*name$/i);
+    const query = WfrpSystemAdapter.#normalizeItemQuery(careerName, /^career\s*name$/i);
     if (!query) return null;
 
     const found = await findWfrpCareer(query);
@@ -230,12 +251,12 @@ export default class WfrpOpenAiDetailsApi {
       };
     }
 
-    return WfrpOpenAiDetailsApi.#matchCareerFromList(careers, query);
+    return WfrpSystemAdapter.#matchCareerFromList(careers, query);
   }
 
   static #matchCareerFromList(careers, query) {
     const queryLower = query.toLowerCase();
-    const queryBase = WfrpOpenAiDetailsApi.#extractBaseName(query).toLowerCase();
+    const queryBase = WfrpSystemAdapter.#extractBaseName(query).toLowerCase();
 
     let matches = careers.filter((career) => {
       const englishName = career.flags?.babele?.originalName ?? "";
@@ -247,8 +268,8 @@ export default class WfrpOpenAiDetailsApi {
 
     if (!matches.length) {
       matches = careers.filter((career) => {
-        const displayName = WfrpOpenAiDetailsApi.#careerDisplayName(career);
-        const baseName = WfrpOpenAiDetailsApi.#extractBaseName(displayName).toLowerCase();
+        const displayName = WfrpSystemAdapter.#careerDisplayName(career);
+        const baseName = WfrpSystemAdapter.#extractBaseName(displayName).toLowerCase();
         return baseName === queryBase
           || displayName.toLowerCase().startsWith(`${queryBase} (`);
       });
@@ -264,13 +285,13 @@ export default class WfrpOpenAiDetailsApi {
     if (!matches.length) {
       matches = careers
         .map((career) => {
-          const displayName = WfrpOpenAiDetailsApi.#careerDisplayName(career).toLowerCase();
+          const displayName = WfrpSystemAdapter.#careerDisplayName(career).toLowerCase();
           const englishName = career.flags?.babele?.originalName?.toLowerCase() ?? displayName;
           return {
             career,
             index: Math.min(
-              WfrpOpenAiDetailsApi.levenshtein(displayName, queryLower),
-              WfrpOpenAiDetailsApi.levenshtein(englishName, queryLower),
+              WfrpSystemAdapter.levenshtein(displayName, queryLower),
+              WfrpSystemAdapter.levenshtein(englishName, queryLower),
             ),
           };
         })
@@ -298,7 +319,7 @@ export default class WfrpOpenAiDetailsApi {
   }
 
   static async #resolveTalentMatch(talents, talentName) {
-    const query = WfrpOpenAiDetailsApi.#normalizeItemQuery(talentName, /^talent\s*name$/i);
+    const query = WfrpSystemAdapter.#normalizeItemQuery(talentName, /^talent\s*name$/i);
     if (!query) return null;
 
     const found = await findWfrpTalent(query);
@@ -310,12 +331,12 @@ export default class WfrpOpenAiDetailsApi {
       };
     }
 
-    return WfrpOpenAiDetailsApi.#matchTalentFromList(talents, query);
+    return WfrpSystemAdapter.#matchTalentFromList(talents, query);
   }
 
   static #matchTalentFromList(talents, query) {
     const queryLower = query.toLowerCase();
-    const queryBase = WfrpOpenAiDetailsApi.#extractBaseName(query).toLowerCase();
+    const queryBase = WfrpSystemAdapter.#extractBaseName(query).toLowerCase();
 
     let matches = talents.filter((talent) => {
       const englishName = talent.flags?.babele?.originalName ?? "";
@@ -328,7 +349,7 @@ export default class WfrpOpenAiDetailsApi {
     if (!matches.length) {
       matches = talents.filter((talent) => {
         const displayName = talent.flags?.babele?.originalName ?? talent.name ?? "";
-        const baseName = WfrpOpenAiDetailsApi.#extractBaseName(displayName).toLowerCase();
+        const baseName = WfrpSystemAdapter.#extractBaseName(displayName).toLowerCase();
         return baseName === queryBase
           || displayName.toLowerCase().startsWith(`${queryBase} (`);
       });
@@ -342,8 +363,8 @@ export default class WfrpOpenAiDetailsApi {
           return {
             talent,
             index: Math.min(
-              WfrpOpenAiDetailsApi.levenshtein(displayName, queryLower),
-              WfrpOpenAiDetailsApi.levenshtein(englishName, queryLower),
+              WfrpSystemAdapter.levenshtein(displayName, queryLower),
+              WfrpSystemAdapter.levenshtein(englishName, queryLower),
             ),
           };
         })
@@ -409,9 +430,9 @@ export default class WfrpOpenAiDetailsApi {
    * @returns {number}
    */
   static #computeWoundsFromCharacteristics(stats, size = "avg") {
-    const sb = WfrpOpenAiDetailsApi.#characteristicBonus(stats.s);
-    const tb = WfrpOpenAiDetailsApi.#characteristicBonus(stats.t);
-    const wpb = WfrpOpenAiDetailsApi.#characteristicBonus(stats.wp);
+    const sb = WfrpSystemAdapter.#characteristicBonus(stats.s);
+    const tb = WfrpSystemAdapter.#characteristicBonus(stats.t);
+    const wpb = WfrpSystemAdapter.#characteristicBonus(stats.wp);
 
     switch (size) {
       case "tiny":
@@ -448,7 +469,7 @@ export default class WfrpOpenAiDetailsApi {
 
   static #applyWounds(system, characteristics) {
     const size = system.details?.size?.value ?? "avg";
-    const wounds = WfrpOpenAiDetailsApi.#computeWoundsFromCharacteristics(
+    const wounds = WfrpSystemAdapter.#computeWoundsFromCharacteristics(
       {
         s: characteristics.strength,
         t: characteristics.toughness,
@@ -462,7 +483,7 @@ export default class WfrpOpenAiDetailsApi {
     system.status.wounds.max = wounds;
     system.status.wounds.value = wounds;
 
-    const tb = WfrpOpenAiDetailsApi.#characteristicBonus(characteristics.toughness);
+    const tb = WfrpSystemAdapter.#characteristicBonus(characteristics.toughness);
     system.status.criticalWounds ??= { value: 0, max: tb };
     system.status.criticalWounds.max = tb;
   }
@@ -477,7 +498,7 @@ export default class WfrpOpenAiDetailsApi {
 
   static #parseHeightCm(raw) {
     const text = String(raw ?? "").trim().toLowerCase();
-    let value = WfrpOpenAiDetailsApi.#extractFirstNumber(raw);
+    let value = WfrpSystemAdapter.#extractFirstNumber(raw);
     if (value == null) return null;
 
     const hasCm = /\bcm\b|centimet/.test(text);
@@ -495,7 +516,7 @@ export default class WfrpOpenAiDetailsApi {
 
   static #parseWeightKg(raw) {
     const text = String(raw ?? "").trim().toLowerCase();
-    let value = WfrpOpenAiDetailsApi.#extractFirstNumber(raw);
+    let value = WfrpSystemAdapter.#extractFirstNumber(raw);
     if (value == null) return null;
 
     if (/\b(st|stone|stones)\b/.test(text)) {
@@ -519,9 +540,9 @@ export default class WfrpOpenAiDetailsApi {
     if (heightCm == null || weightKg == null) return false;
     if (heightCm < 50 && weightKg > 100) return true;
     if (
-      WfrpOpenAiDetailsApi.#looksLikeHeightCm(weightKg)
-      && WfrpOpenAiDetailsApi.#looksLikeWeightKg(heightCm)
-      && !WfrpOpenAiDetailsApi.#looksLikeHeightCm(heightCm)
+      WfrpSystemAdapter.#looksLikeHeightCm(weightKg)
+      && WfrpSystemAdapter.#looksLikeWeightKg(heightCm)
+      && !WfrpSystemAdapter.#looksLikeHeightCm(heightCm)
     ) {
       return true;
     }
@@ -541,40 +562,40 @@ export default class WfrpOpenAiDetailsApi {
   static #normalizeHeightWeight(details) {
     let heightRaw = details.height;
     let weightRaw = details.weight;
-    let heightCm = WfrpOpenAiDetailsApi.#parseHeightCm(heightRaw);
-    let weightKg = WfrpOpenAiDetailsApi.#parseWeightKg(weightRaw);
+    let heightCm = WfrpSystemAdapter.#parseHeightCm(heightRaw);
+    let weightKg = WfrpSystemAdapter.#parseWeightKg(weightRaw);
     let swapped = false;
 
-    if (WfrpOpenAiDetailsApi.#shouldSwapHeightWeight(heightCm, weightKg)) {
+    if (WfrpSystemAdapter.#shouldSwapHeightWeight(heightCm, weightKg)) {
       swapped = true;
       [heightRaw, weightRaw] = [weightRaw, heightRaw];
-      heightCm = WfrpOpenAiDetailsApi.#parseHeightCm(heightRaw);
-      weightKg = WfrpOpenAiDetailsApi.#parseWeightKg(weightRaw);
+      heightCm = WfrpSystemAdapter.#parseHeightCm(heightRaw);
+      weightKg = WfrpSystemAdapter.#parseWeightKg(weightRaw);
     }
 
     if (
       heightCm != null
       && weightKg != null
-      && WfrpOpenAiDetailsApi.#looksLikeHeightCm(heightCm)
-      && WfrpOpenAiDetailsApi.#looksLikeHeightCm(weightKg)
+      && WfrpSystemAdapter.#looksLikeHeightCm(heightCm)
+      && WfrpSystemAdapter.#looksLikeHeightCm(weightKg)
       && Math.abs(weightKg - heightCm) <= 10
     ) {
       weightKg = Math.max(45, Math.round(heightCm - 100));
     } else if (
       swapped
       && heightCm != null
-      && WfrpOpenAiDetailsApi.#looksLikeHeightCm(heightCm)
-      && !WfrpOpenAiDetailsApi.#looksLikeWeightKg(weightKg)
+      && WfrpSystemAdapter.#looksLikeHeightCm(heightCm)
+      && !WfrpSystemAdapter.#looksLikeWeightKg(weightKg)
     ) {
       weightKg = Math.max(45, Math.round(heightCm - 100));
     }
 
-    if (heightCm != null && WfrpOpenAiDetailsApi.#looksLikeHeightCm(heightCm)) {
-      details.height = WfrpOpenAiDetailsApi.#formatHeightCm(heightCm);
+    if (heightCm != null && WfrpSystemAdapter.#looksLikeHeightCm(heightCm)) {
+      details.height = WfrpSystemAdapter.#formatHeightCm(heightCm);
     }
 
-    if (weightKg != null && WfrpOpenAiDetailsApi.#looksLikeWeightKg(weightKg)) {
-      details.weight = WfrpOpenAiDetailsApi.#formatWeightKg(weightKg);
+    if (weightKg != null && WfrpSystemAdapter.#looksLikeWeightKg(weightKg)) {
+      details.weight = WfrpSystemAdapter.#formatWeightKg(weightKg);
     }
   }
 
@@ -601,8 +622,8 @@ export default class WfrpOpenAiDetailsApi {
     system.characteristics.wp.initial = characteristics.willPower;
     system.characteristics.fel.initial = characteristics.fellowship;
 
-    WfrpOpenAiDetailsApi.#ensureAutoCalcSettings(system);
-    WfrpOpenAiDetailsApi.#applyWounds(system, characteristics);
+    WfrpSystemAdapter.#ensureAutoCalcSettings(system);
+    WfrpSystemAdapter.#applyWounds(system, characteristics);
 
     const { speciesKey, subspeciesKey } = resolveWfrpSpecies(npc.details?.species ?? "");
     if (!system.details.species) {
@@ -610,12 +631,12 @@ export default class WfrpOpenAiDetailsApi {
     }
     system.details.species.value = speciesKey;
     system.details.species.subspecies = subspeciesKey;
-    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "gender", npc.details?.gender);
-    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "haircolour", npc.details?.hair);
-    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "eyecolour", npc.details?.eyes);
-    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "age", npc.details?.age);
-    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "height", npc.details?.height);
-    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "weight", npc.details?.weight);
+    WfrpSystemAdapter.#setDetailValue(system.details, "gender", npc.details?.gender);
+    WfrpSystemAdapter.#setDetailValue(system.details, "haircolour", npc.details?.hair);
+    WfrpSystemAdapter.#setDetailValue(system.details, "eyecolour", npc.details?.eyes);
+    WfrpSystemAdapter.#setDetailValue(system.details, "age", npc.details?.age);
+    WfrpSystemAdapter.#setDetailValue(system.details, "height", npc.details?.height);
+    WfrpSystemAdapter.#setDetailValue(system.details, "weight", npc.details?.weight);
 
     const utility = getWfrpUtility();
     const move = utility?.speciesMovement?.(speciesKey, subspeciesKey);
@@ -637,7 +658,7 @@ export default class WfrpOpenAiDetailsApi {
       .map((paragraph) => `<p>${paragraph}</p>`)
       .join("<hr>");
 
-    WfrpOpenAiDetailsApi.#setDetailValue(system.details, "biography", biography);
+    WfrpSystemAdapter.#setDetailValue(system.details, "biography", biography);
 
     return {
       name: npc.name,
@@ -657,13 +678,13 @@ export default class WfrpOpenAiDetailsApi {
       if (careerRef.uuid) {
         const career = await fromUuid(careerRef.uuid);
         if (career) {
-          careers.push(WfrpOpenAiDetailsApi.#careerItemData(career, isCurrent));
+          careers.push(WfrpSystemAdapter.#careerItemData(career, isCurrent));
           continue;
         }
       }
 
       ui.notifications.warn(`Career "${careerRef.name}" was not found in compendiums; creating a blank career entry.`);
-      careers.push(WfrpOpenAiDetailsApi.#createFallbackCareer(careerRef.name, isCurrent));
+      careers.push(WfrpSystemAdapter.#createFallbackCareer(careerRef.name, isCurrent));
     }
 
     for (const talentRef of npc.talents ?? []) {
@@ -678,7 +699,7 @@ export default class WfrpOpenAiDetailsApi {
       }
 
       ui.notifications.warn(`Talent "${talentRef.name}" was not found in compendiums; creating a blank talent entry.`);
-      talents.push(WfrpOpenAiDetailsApi.#createFallbackTalent(talentRef.name));
+      talents.push(WfrpSystemAdapter.#createFallbackTalent(talentRef.name));
     }
 
     const initialItems = await getWfrpNpcInitialItems();

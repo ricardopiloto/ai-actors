@@ -1,5 +1,11 @@
 import { Constants } from "./constants.mjs";
-import { HandlebarsApplication, WFRP_IMAGE_POPOUT_CLASSES } from "./applications/handlebars-application.mjs";
+import { HandlebarsApplication, bindImageAutoFit, WFRP_IMAGE_POPOUT_CLASSES } from "./applications/handlebars-application.mjs";
+
+const IMAGE_AUTO_FIT = {
+  minWidth: 320,
+  minHeight: 280,
+  measureSelector: ".actor-ai-image-popup",
+};
 
 export default class ActorAiImagePopup extends HandlebarsApplication {
   static DEFAULT_OPTIONS = {
@@ -13,7 +19,7 @@ export default class ActorAiImagePopup extends HandlebarsApplication {
     },
     position: {
       width: 600,
-      height: 400,
+      height: 280,
     },
   };
 
@@ -21,7 +27,6 @@ export default class ActorAiImagePopup extends HandlebarsApplication {
     content: {
       template: Constants.TEMPLATES.IMAGEPOPUP,
       root: true,
-      scrollable: [""],
     },
   };
 
@@ -35,5 +40,10 @@ export default class ActorAiImagePopup extends HandlebarsApplication {
     return foundry.utils.mergeObject(context, {
       image: this.image,
     });
+  }
+
+  _onRender(context, options) {
+    super._onRender(context, options);
+    bindImageAutoFit(this, IMAGE_AUTO_FIT);
   }
 }

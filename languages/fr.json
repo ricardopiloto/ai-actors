@@ -20,6 +20,9 @@
       "SaveImage": "Sauvegarder l'image",
       "ImagePopup": "Image"
     },
+    "Chat": {
+      "HistoryReset": "Historique de conversation IA effacé."
+    },
     "Errors": {
       "LlmApiKeyMissing": "Configurez la clé API du fournisseur LLM sélectionné dans les paramètres du module.",
       "LlmApiKeyMissingNamed": "Configurez \"{setting}\" dans Configuration → Paramètres du module → AI Generated NPCs.",
