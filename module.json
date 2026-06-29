@@ -4,15 +4,10 @@
   "description": "GM Assistant that creates AI NPCs from prompts",
   "authors": [
     {
-      "name": "Rachel Schutz"
-    },
-    {
-      "name": "silent_mark",
-      "email": "marek@kembrowski.net",
-      "discord": "silent_mark"
+      "name": "Ricardo Sobral"
     }
   ],
-  "version": "1.8.0",
+  "version": "1.9.0",
   "compatibility": {
       "minimum": "13",
       "verified": "14"

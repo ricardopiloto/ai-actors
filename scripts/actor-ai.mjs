@@ -32,7 +32,6 @@ export default class ActorAi extends HandlebarsApplication {
     actions: {
       save: ActorAi.#onSave,
       generate: ActorAi.#onGenerate,
-      upscale: ActorAi.#onUpscale,
       previewImage: ActorAi.#onPreviewImage,
     },
   };
@@ -128,7 +127,6 @@ export default class ActorAi extends HandlebarsApplication {
       }
       await this.api.updateInputModelWithImagePrompt(this.apiInput, this.actorInput);
 
-      const systemPrompt = game.settings.get(Constants.ID, ActorAiOpenAiApi.systemPromptKey);
       let noOfSentences = 10;
       switch (this.actorInput.complexity) {
         case "simple":
@@ -146,13 +144,10 @@ export default class ActorAi extends HandlebarsApplication {
         .localize("AActors.OpenAI.TechnicalSystemPrompt")
         .replaceAll("<<noOfSentences>>", noOfSentences.toString())
         .replaceAll("<<noOfSentencesHalved>>", Math.ceil(noOfSentences / 2).toString());
-      const jsonInput = JSON.stringify(this.apiInput.JsonFormat);
+      postData._technicalPrompt = technicalPrompt;
+      postData._jsonInput = JSON.stringify(this.apiInput.JsonFormat);
 
-      postData.messages = [
-        { role: "system", content: `${systemPrompt}\n${technicalPrompt}\n${jsonInput}` },
-      ];
-
-      const actorInput = await this.api.generateDescription(postData, this.apiInput, this.actorInput);
+      const actorInput = await this.api.generateDescription(postData, this.apiInput);
       await this.apiDetails.normalizeResponse(actorInput);
       this.actorInput = foundry.utils.mergeObject(this.actorInput, actorInput);
       this.actorInput.html = this.apiDetails.prettyPrintNpc(this.actorInput);
@@ -200,21 +195,6 @@ export default class ActorAi extends HandlebarsApplication {
 
     await this.refresh({ stage: "image", message: game.i18n.localize("AActors.OpenAI.StageImage") });
     await this.#tryGenerateImage(prompt);
-    await this.refresh({ stage: "final", message: "" });
-  }
-
-  static async #onUpscale(event, target) {
-    const messageId = target.closest("[data-message-id]")?.dataset.messageId;
-    const upscaleCustomId = target.dataset.customId;
-
-    await this.refresh({ stage: "image", message: game.i18n.localize("AActors.OpenAI.StageImage") });
-
-    const response = await this.apiImage.upscale(messageId, upscaleCustomId);
-    delete this.actorInput.upscale;
-    delete this.actorInput.messageId;
-    delete this.actorInput.upscalers;
-    this.actorInput = foundry.utils.mergeObject(this.actorInput, response.actorInput);
-
     await this.refresh({ stage: "final", message: "" });
   }
 

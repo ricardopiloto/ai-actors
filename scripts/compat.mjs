@@ -79,6 +79,30 @@ export function getWfrpUtility() {
 }
 
 /**
+ * @param {string} name
+ * @returns {Promise<object|null>}
+ */
+export async function findWfrpCareer(name) {
+  const utility = getWfrpUtility();
+  if (!utility?.findItem) return null;
+  return (await utility.findItem(name, "career")) ?? null;
+}
+
+/**
+ * @param {string} name
+ * @returns {Promise<object|null>}
+ */
+export async function findWfrpTalent(name) {
+  const utility = getWfrpUtility();
+  if (!utility?.findTalent) return null;
+  try {
+    return await utility.findTalent(name);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Resolve a display species string to WFRP4e config keys.
  * @param {string} speciesString e.g. "Human" or "Dwarf (Karak Azul)"
  * @returns {{ speciesKey: string, subspeciesKey: string }}

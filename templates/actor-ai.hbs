@@ -13,14 +13,6 @@
                         <div class="actor-ai-img-buttons">
                             <button type="button" data-action="generate">{{localize "AActors.General.GenerateImage"}}</button>
                         </div>
-                        
-                        {{#if (eq actorInput.upscale true)}}
-                        <div class="actor-ai-img-buttons" data-message-id="{{actorInput.messageId}}" >
-                            {{#each actorInput.upscalers as |upscale i|}}
-                                <button type="button" data-custom-id="{{upscale}}" data-action="upscale">U{{i}}</button>
-                            {{/each}}
-                        </div>
-                        {{/if}}
                     {{/if}}
                 </div>
                 {{#if (ne context.stage "init")}}

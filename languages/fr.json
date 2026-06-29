@@ -19,21 +19,31 @@
       "SaveImage": "Sauvegarder l'image",
       "ImagePopup": "Image"
     },
-
     "Errors": {
       "LlmApiKeyMissing": "Configurez la clé API du fournisseur LLM sélectionné dans les paramètres du module.",
       "LlmApiKeyMissingNamed": "Configurez \"{setting}\" dans Configuration → Paramètres du module → AI Generated NPCs.",
       "OpenRouterConfigMissing": "Configurez votre clé API OpenRouter dans les paramètres du module.",
       "OpenRouterImageFailed": "Échec de la génération d'image OpenRouter pour le modèle \"{model}\" : {details}",
-      "OpenRouterImageEmpty": "OpenRouter n'a renvoyé aucune image."
+      "OpenRouterImageEmpty": "OpenRouter n'a renvoyé aucune image.",
+      "LlmJsonInvalid": "Le LLM a renvoyé un JSON invalide : {details}. Essayez de baisser la température ou de réduire la complexité de la description.",
+      "LlmJsonTruncated": "La réponse du LLM a été coupée avant la fin du JSON (augmentez Max Tokens dans les paramètres du module)."
     },
-
     "Notifications": {
       "LegacySettingsMigrated": "AI Generated NPCs a migré {count} paramètres depuis l'ancienne version du module.",
-      "CloudflareRemovedMigrated": "La génération d'images Cloudflare a été supprimée. Le fournisseur d'images a été basculé vers OpenRouter — configurez votre clé API OpenRouter dans les paramètres du module."
+      "CloudflareRemovedMigrated": "La génération d'images Cloudflare a été supprimée. Le fournisseur d'images a été basculé vers OpenRouter — configurez votre clé API OpenRouter dans les paramètres du module.",
+      "RemovedImageProviderMigrated": "Un fournisseur d'images non pris en charge a été supprimé. Le fournisseur a été basculé vers OpenRouter — vérifiez les paramètres du module.",
+      "LlmJsonRetrying": "JSON du PNJ invalide ou incomplet. Nouvelle tentative avec des instructions plus strictes..."
     },
-
     "Settings": {
+      "Sections": {
+        "LLMConfig": "Configuration LLM",
+        "ImageConfig": "Configuration des images",
+        "Anthropic": "Anthropic",
+        "OpenAI": "OpenAI",
+        "DeepSeek": "DeepSeek",
+        "OpenRouter": "OpenRouter",
+        "OpenAIImage": "OpenAI (DALL-E)"
+      },
       "imageFolderLocation": {
         "Name": "Dossier des images",
         "Hint": "Indique le dossier dans lequel les images seront sauvegardées. Si le dossier n'existe pas, il sera créé."
@@ -41,9 +51,18 @@
       "LLM": {
         "llmProvider": {
           "Name": "Fournisseur LLM",
-          "Hint": "Choisissez l'API qui génère le texte des PNJ et les réponses du chat.",
+          "Hint": "Choisissez l'API qui génère les détails des PNJ et les réponses du chat.",
           "OpenAI": "OpenAI",
+          "Anthropic": "Anthropic",
           "DeepSeek": "DeepSeek"
+        },
+        "anthropicApiKey": {
+          "Name": "Clé API Anthropic",
+          "Hint": "Clé API depuis https://console.anthropic.com/"
+        },
+        "anthropicModel": {
+          "Name": "Modèle Anthropic",
+          "Hint": "Identifiant du modèle, ex. claude-sonnet-4-20250514"
         },
         "deepseekApiKey": {
           "Name": "Clé API DeepSeek",
@@ -59,8 +78,7 @@
           "Name": "Fournisseur d'images",
           "Hint": "Choisissez l'API qui génère les portraits et les images /whisper img.",
           "OpenRouter": "OpenRouter",
-          "OpenAI": "OpenAI (DALL-E)",
-          "MidJourney": "MidJourney (Discord)"
+          "OpenAI": "OpenAI (DALL-E)"
         },
         "openrouterApiKey": {
           "Name": "Clé API OpenRouter",
@@ -111,7 +129,7 @@
         "topP": {
           "Name": "Top P",
           "Hint": "Indiquez une valeur 'top_p' pour générer le PNJ, cf. https://platform.openai.com/docs/api-reference/chat/create#chat-create-top_p"
-        },        
+        },
         "imageAdditionalQualities": {
           "Name": "Propriété additionnelles",
           "Hint": "Indiquez des propriétés additionnelles qui seront ajoutées au prompt image, ie 'réaliste, fantasy, détaillée'"
@@ -120,51 +138,26 @@
           "Name": "Version de ChatGTP à utliser",
           "Hint": "Indiquez une version de modèle ChatGPT"
         }
-      },
-      "MJ": {
-        "authorizationHeader": {
-          "Name": "Entête d'autorisation Discord",
-          "Hint": "Indiquez un 'Authorization Header' pour accéder à l'API, pour plus de détails consultez : https://medium.com/@useapi.net/interact-with-midjourney-using-discord-api-5a2e150f5e97"
-        },
-        "channelId": {
-          "Name": "Id de canal Discord ",
-          "Hint": "Indiquez l'ID du canal Discord"
-        },
-        "appId": {
-          "Name": "App Id de Midjourney",
-          "Hint": "Indiquez l'App Id de Midjourney"
-        },
-        "guildId": {
-          "Name": "Id de Guilde Discord",
-          "Hint": "Indiquez l'Id de Guilde Discord"
-        },
-        "sessionId": {
-          "Name": "Id de session Discord",
-          "Hint": "Indiquez l'Id de session Discord"
-        },
-        "imagineCommandVersionId": {
-          "Name": "Id de version de la commande Imagine de MidJourney",
-          "Hint": "Indiquez l'Id de version de la commande Imagine de MidJourney"
-        },
-        "imagineCommandId": {
-          "Name": "Id de la commande Imagine de MidJourney",
-          "Hint": "Indiquez l'Id de la commande Imagine de MidJourney"
-        }
       }
     },
     "OpenAI": {
       "DefaultSystemPrompt": "Vous êtes un assistant utile et créatif du Maitre de Jeu dans la 4e édition de Warhammer Fantasy RPG. Vous aidez en fournissant des descriptions et des caractéristiques de base pour les PNJ, des descriptions de lieux, des histoires et des aventures. Utilisez les traditions et l'histoire de Warhammer Fantasy World et laissez-vous inspirer par d'autres littératures ou films fantastiques. Utilisez un style artistique basé sur des romans et des histoires. N'utilisez pas de calculs ni de puces.",
-      "TechnicalSystemPrompt": " Renvoyez la description au format html, sans css. Renvoyez la réponse au format json donné à la fin de l'invite. Ne sautez aucun champ JSON. Dans le champ 'description', mettez la description du PNJ\n 1. Dans le champ d'apparence : description du visage, description du corps, vêtements du PNJ. Écrivez des phrases <<noOfSentences>>\n 2. Dans le champ personnalité : le caractère du PNJ, son attitude. Écrivez des phrases <<noOfSentences>>\n 3. Dans le champ des motivations : les motivations du NPc, ses objectifs en direct, ce qui le motive. Écrivez des phrases <<noOfSentences>>\n 4. Dans le champ biographie : la biographie du PNJ avec les événements qui l'ont façonné. Écrivez des phrases <<noOfSentences>>\n 5. Dans le champ SpecificTraits : les caractéristiques ou caractéristiques spéciales du PNJ. Écrivez des phrases <<noOfSentencesHalved>>",
+      "TechnicalSystemPrompt": " Renvoyez les champs texte du PNJ en texte brut uniquement (sans balises HTML). Renvoyez un seul objet JSON valide correspondant au schéma à la fin de l'invite. Ne sautez aucun champ. Pas de markdown. N'utilisez pas de sauts de ligne bruts ni de guillemets doubles dans les valeurs JSON ; utilisez \\n et évitez les guillemets dans le texte. Limitez chaque sous-champ description à <<noOfSentences>> phrases courtes maximum.\n 1. appearance : visage, corps, vêtements\n 2. personality : caractère et attitude\n 3. motivations : objectifs et moteurs\n 4. biography : événements formatifs\n 5. specificTraits : traits distinctifs (<<noOfSentencesHalved>> phrases max)",
       "InitialMessage": "Génération de la description du PNJ...",
-
+      "StageImage": "Génération du portrait du PNJ...",
       "ImageMessage": "Génération du portrait du PNJ...",
-      "StageImagePrompt": "- Enfin, sur la base de tout le contenu préparé, préparer une description en anglais dans le but de générer une image à l'aide de Dall-E. La description doit commencer par <<additionalImageQualities>>. Un portrait de'. Renvoie la description générée au format JSON."
+      "StageImagePrompt": "- Enfin, sur la base de tout le contenu préparé, préparer une description en anglais dans le but de générer une image à l'aide de Dall-E. La description doit commencer par <<additionalImageQualities>>. Un portrait de'. Renvoie la description générée au format JSON.",
+      "JsonRepairPrompt": "Votre réponse précédente n'était pas un JSON valide. Répondez UNIQUEMENT avec un objet JSON valide correspondant au schéma requis. Texte brut dans les champs description (pas de HTML). Pas de guillemets doubles dans les valeurs. Soyez bref.",
+      "JsonTruncatedHint": "La réponse précédente était trop longue et a été coupée. Renvoyez un JSON valide plus court avec des descriptions plus brèves tout en conservant toutes les clés requises.",
+      "JsonRetryShortHint": "Utilisez au maximum 2 phrases courtes par champ description. Priorisez un JSON valide plutôt que le détail."
     },
     "WFRP": {
-      "StageCharacteristicsPrompt": "1. Sur la base des étapes précédentes, renvoyez les caractéristiques du PNJ au format JSON. Remplissez les champs de caractéristiques avec des valeurs numériques sur une échelle de 1 à 100, où 0 signifie aucun, 100 est légendaire. dans le champ 'nom', écrivez le nom du PNJ, si aucun ne le propose, proposez-en un.\n 2. Sur la base des étapes précédentes, renvoyez les détails du PNJ dans les champs : espèce, sexe, âge, taille, poids, cheveux, yeux.",
-      "StageCareersPrompt": "3. Sur la base des étapes précédentes, sélectionnez un numéro de carrière <<noOfCareers>> parmi ceux disponibles dans la version anglaise du manuel WFRP 4ed. Renvoie les noms sélectionnés dans un format de tableau JSON plat. Ne changez pas le cas.",
-       "StageTalentsPrompt": "4. En vous basant sur les étapes précédentes, sélectionnez <<noOfTalents>> nombre de talents parmi ceux disponibles dans la version anglaise du manuel WFRP 4ed. Renvoie les noms sélectionnés dans un format de tableau JSON plat sans aucune structure. Ne changez pas le cas. Ne modifiez pas les valeurs. Ne changez pas les noms des talents.",
-
+      "StageCharacteristics": "Génération des caractéristiques du PNJ...",
+      "StageCareers": "Sélection des carrières...",
+      "StageTalents": "Sélection des talents...",
+      "StageCharacteristicsPrompt": "1. Sur la base des étapes précédentes, renvoyez les caractéristiques du PNJ au format JSON. Remplissez les champs de caractéristiques avec des valeurs numériques sur une échelle de 1 à 100, où 0 signifie aucun, 100 est légendaire. dans le champ 'nom', écrivez le nom du PNJ, si aucun ne le propose, proposez-en un.\n 2. Sur la base des étapes précédentes, renvoyez les détails du PNJ dans les champs : espèce, sexe, âge, height, weight, cheveux, yeux. Mettez l'âge en entier (années). Mettez height en centimètres entiers uniquement (exemple : 175, pas 1,75 m). Mettez weight en kilogrammes entiers uniquement (exemple : 70). N'inversez pas height et weight.",
+      "StageCareersPrompt": "3. Sur la base des étapes précédentes, sélectionnez <<noOfCareers>> carrière(s). Utilisez uniquement des noms exacts de rang tier-1 en anglais dans cette liste : <<careerList>>. N'utilisez pas les noms de classe sociale (Peasant, Burgher, Noble, Warrior, etc.) — choisissez un rang précis (ex. Boatman, Soldier, Scion). Renvoyez un tableau JSON plat sans changer l'orthographe ni la casse.",
+      "StageTalentsPrompt": "4. En vous basant sur les étapes précédentes, sélectionnez <<noOfTalents>> nombre de talents parmi ceux disponibles dans la version anglaise du manuel WFRP 4ed. Renvoie les noms sélectionnés dans un format de tableau JSON plat sans aucune structure. Ne changez pas le cas. Ne modifiez pas les valeurs. Ne changez pas les noms des talents.",
       "WS": "CC",
       "BS": "CT",
       "S": "F",
@@ -175,7 +168,6 @@
       "Int": "Int",
       "WP": "FM",
       "Fel": "Soc",
-
       "Hair": "Cheveux",
       "Eyes": "Yeux",
       "Height": "Taille",

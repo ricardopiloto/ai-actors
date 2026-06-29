@@ -1,6 +1,7 @@
 import ActorAiInput from './actor-ai-input.mjs';
 import ChatAiOpenAiApi from './api/chat-ai-open-ai-api.mjs';
 import './api/ai-settings.mjs';
+import './api/settings-ui.mjs';
 import { Constants } from './constants.mjs';
 import { isV13Plus } from './compat.mjs';
 
@@ -98,16 +99,6 @@ function registerLegacyActorDirectoryButton() {
 }
 
 Hooks.once('init', () => {
-    game.settings.register(Constants.ID, Constants.imageFolderLocation, {
-        name: `AActors.Settings.${Constants.imageFolderLocation}.Name`,
-        default: "ai-images",
-        type: String,
-        scope: "world",
-        config: true,
-        restricted: true,
-        hint: `AActors.Settings.${Constants.imageFolderLocation}.Hint`
-    });
-
     if (isV13Plus()) {
         registerActorDirectoryButton();
     } else {

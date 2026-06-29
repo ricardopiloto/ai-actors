@@ -19,21 +19,31 @@
       "SaveImage": "Zapisz Obraz",
       "ImagePopup": "Obraz"
     },
-
     "Errors": {
       "LlmApiKeyMissing": "Skonfiguruj klucz API dla wybranego dostawcy LLM w ustawieniach modułu.",
       "LlmApiKeyMissingNamed": "Skonfiguruj \"{setting}\" w Ustawienia → Ustawienia modułu → AI Generated NPCs.",
       "OpenRouterConfigMissing": "Skonfiguruj klucz API OpenRouter w ustawieniach modułu.",
       "OpenRouterImageFailed": "Generowanie obrazu OpenRouter nie powiodło się dla modelu \"{model}\": {details}",
-      "OpenRouterImageEmpty": "OpenRouter nie zwrócił danych obrazu."
+      "OpenRouterImageEmpty": "OpenRouter nie zwrócił danych obrazu.",
+      "LlmJsonInvalid": "LLM zwróciło nieprawidłowy JSON: {details}. Spróbuj obniżyć temperaturę lub zmniejszyć złożoność opisu.",
+      "LlmJsonTruncated": "Odpowiedź LLM została ucięta przed zakończeniem JSON (zwiększ Max Tokens w ustawieniach modułu)."
     },
-
     "Notifications": {
       "LegacySettingsMigrated": "AI Generated NPCs przeniosło {count} ustawień z poprzedniej wersji modułu.",
-      "CloudflareRemovedMigrated": "Generowanie obrazów Cloudflare zostało usunięte. Dostawca obrazów przełączony na OpenRouter — skonfiguruj klucz API OpenRouter w ustawieniach modułu."
+      "CloudflareRemovedMigrated": "Generowanie obrazów Cloudflare zostało usunięte. Dostawca obrazów przełączony na OpenRouter — skonfiguruj klucz API OpenRouter w ustawieniach modułu.",
+      "RemovedImageProviderMigrated": "Nieobsługiwany dostawca obrazów został usunięty. Dostawca przełączony na OpenRouter — sprawdź ustawienia modułu.",
+      "LlmJsonRetrying": "JSON postaci był nieprawidłowy lub niekompletny. Ponawiam z bardziej restrykcyjnymi instrukcjami..."
     },
-
     "Settings": {
+      "Sections": {
+        "LLMConfig": "Konfiguracja LLM",
+        "ImageConfig": "Konfiguracja generowania obrazów",
+        "Anthropic": "Anthropic",
+        "OpenAI": "OpenAI",
+        "DeepSeek": "DeepSeek",
+        "OpenRouter": "OpenRouter",
+        "OpenAIImage": "OpenAI (DALL-E)"
+      },
       "imageFolderLocation": {
         "Name": "Lokalizacja Folderu z generowanymi obrazami",
         "Hint": "Podaj lokalizację folderu, w którym będą zapisywane generowane obrazy, jeśli folder nie istnieje, zostanie utworzony"
@@ -41,9 +51,18 @@
       "LLM": {
         "llmProvider": {
           "Name": "Dostawca LLM",
-          "Hint": "Wybierz API generujące tekst NPC i odpowiedzi na czacie.",
+          "Hint": "Wybierz API generujące szczegóły NPC i odpowiedzi na czacie.",
           "OpenAI": "OpenAI",
+          "Anthropic": "Anthropic",
           "DeepSeek": "DeepSeek"
+        },
+        "anthropicApiKey": {
+          "Name": "Klucz API Anthropic",
+          "Hint": "Klucz API z https://console.anthropic.com/"
+        },
+        "anthropicModel": {
+          "Name": "Model Anthropic",
+          "Hint": "Identyfikator modelu, np. claude-sonnet-4-20250514"
         },
         "deepseekApiKey": {
           "Name": "Klucz API DeepSeek",
@@ -59,8 +78,7 @@
           "Name": "Dostawca obrazów",
           "Hint": "Wybierz API generujące portrety NPC i obrazy z /whisper img.",
           "OpenRouter": "OpenRouter",
-          "OpenAI": "OpenAI (DALL-E)",
-          "MidJourney": "MidJourney (Discord)"
+          "OpenAI": "OpenAI (DALL-E)"
         },
         "openrouterApiKey": {
           "Name": "Klucz API OpenRouter",
@@ -120,51 +138,25 @@
           "Name": "Wersja modelu Open AI Chat-GPT",
           "Hint": "Wybierz wersję modelu Open AI Chat-GPT"
         }
-      },
-      "MJ": {
-        "authorizationHeader": {
-          "Name": "Discord Authorization Header",
-          "Hint": "Podaj token autoryzacji dostępu do Discord, szczegółowe informacje jak go znaleźć: https://medium.com/@useapi.net/interact-with-midjourney-using-discord-api-5a2e150f5e97"
-        },
-        "channelId": {
-          "Name": "Discord Channel Id",
-          "Hint": "Provide a Discord Channel Id"
-        },
-        "appId": {
-          "Name": "Midjourney App Id",
-          "Hint": "Provide an App Id"
-        },
-        "guildId": {
-          "Name": "Discord Guild Id",
-          "Hint": "Provide a Guild Id"
-        },
-        "sessionId": {
-          "Name": "Discord Session Id",
-          "Hint": "Provide a Session Id"
-        },
-        "imagineCommandVersionId": {
-          "Name": "MidJourney Imagine Command Version Id",
-          "Hint": "Provide an Imagine Command Version Id"
-        },
-        "imagineCommandId": {
-          "Name": "MidJourney Imagine Command Id",
-          "Hint": "Provide an Imagine Command Id"
-        }
       }
     },
     "OpenAI": {
       "DefaultSystemPrompt": "Jesteś pomocnym i kreatywnym asystentem Mistrza Gry w 4. edycji Warhammer Fantasy RPG. Pomagasz, podając opisy i podstawowe cechy dla Bohaterów Niezależnych, opisy miejsc, wydarzeń oraz przygód. Korzystaj z opisu świata i historii Warhammer Fantasy, korzystaj z inspiracji innymi dziełami literatury fantasy. Używaj systemu metrycznego. Używaj stylu artystycznego, typowego dla powieści i opowiadań. Nie kopiuj zwrotów użytych w zapytaniu. Nie używaj wyliczeń i wypunktowań.",
-      "TechnicalSystemPrompt": " Odpowiedź zwróć w języku polskim. Opis zwróc w formacie html, bez css. Odpowiedź zwróć w formacie JSON zdefiniowanym na końcu. Nie pomijaj żadnego z pól JSON. Wyjście będzie zawierać w polu description bohatera niezależnego\n 1. w polu apperance: opis twarzy, ubiór, sylwetka. Napisz <<noOfSentences>> zdań\n 2. w polu personality: opis charakteru, nastawienia do świata. Napisz <<noOfSentences>> zdań\n 3. w polu motivations: motywacje i wartości którymi kieruje się w życiu. Napisz <<noOfSentences>> zdań\n 4. polu biography: biografię wydarzeniami, które go ukształtowały. Napisz <<noOfSentences>> zdań\n 5. w polu specificTraits: cechy charakterystyczne, które go wyróżniają. Napisz <<noOfSentencesHalved>> zdań",
+      "TechnicalSystemPrompt": " Zwracaj pola tekstowe NPC jako zwykły tekst (bez HTML). Zwróć jeden poprawny obiekt JSON zgodny ze schematem na końcu promptu. Nie pomijaj pól. Bez markdown. Nie używaj surowych enterów ani cudzysłowów w wartościach JSON; używaj \\n i unikaj cudzysłowów w treści. Każde pole description: maksymalnie <<noOfSentences>> krótkich zdań.\n 1. appearance: twarz, ciało, ubranie\n 2. personality: charakter i postawa\n 3. motivations: cele i motywacje\n 4. biography: wydarzenia kształtujące\n 5. specificTraits: cechy wyróżniające (max <<noOfSentencesHalved>> zdań)",
+      "JsonRepairPrompt": "Poprzednia odpowiedź nie była poprawnym JSON. Odpowiedz TYLKO jednym poprawnym obiektem JSON zgodnym ze schematem. Pola description jako zwykły tekst (bez HTML). Bez cudzysłowów w wartościach. Bądź zwięzły.",
+      "JsonTruncatedHint": "Poprzednia odpowiedź była za długa i została ucięta. Zwróć krótszy poprawny JSON z krótszymi opisami, zachowując wszystkie wymagane klucze.",
+      "JsonRetryShortHint": "Użyj maksymalnie 2 krótkich zdań na pole description. Priorytet: poprawny JSON, nie szczegółowość.",
       "InitialMessage": "Generowanie opisu BNa...",
-
       "StageImage": "Generowanie portretu BNa...",
       "StageImagePrompt": "Jako ostatni krok, na podstawie przygotowanego opisu i biografii, przygotuj opis wyglądu po angielsku na potrzeby generowania portretu. Opis powinien zaczynać się od '<<additionalImageQualities>>. A portrait of'. Umieść opis w polue imagePrompt w zdefiniowanym JSON"
     },
-    "WFRP": {      
-      "StageCharacteristicsPrompt": "1. Na podstawie przygotowanego opisu, zwróć w formacie JSON statystyki bohatera niezależnego. Pola characteristics wypełnij wartościami liczbowymi w skali od 1 do 100 - W polu name wpisz imię postaci, jeśli nie podano, zaproponuj jakieś\n 2. Na podstawie poprzednich kroków podaj szczegóły postaci w polach species, gender, age, height, weight, hair, eyes. Wartości powinny być w języku polskim",
-      "StageCareersPrompt": "3. Na podstawie poprzednich kroków wybierz liczbę profesji (Career) <<noOfCareers>> spośród dostępnych w podręczniku do angielskiej wersji systemu WFRP 4ed.",
+    "WFRP": {
+      "StageCharacteristics": "Generowanie statystyk BNa...",
+      "StageCareers": "Wybór profesji...",
+      "StageTalents": "Wybór talentów...",
+      "StageCharacteristicsPrompt": "1. Na podstawie przygotowanego opisu, zwróć w formacie JSON statystyki bohatera niezależnego. Pola characteristics wypełnij wartościami liczbowymi w skali od 1 do 100 - W polu name wpisz imię postaci, jeśli nie podano, zaproponuj jakieś\n 2. Na podstawie poprzednich kroków podaj szczegóły postaci w polach species, gender, age, height, weight, hair, eyes. Wiek jako liczba całkowita (lata). Height tylko w centymetrach (np. 175, nie 1,75 m). Weight tylko w kilogramach (np. 70). Nie zamieniaj height i weight. Pozostałe wartości w języku polskim.",
+      "StageCareersPrompt": "3. Na podstawie poprzednich kroków wybierz <<noOfCareers>> profesję/profesje. Używaj wyłącznie dokładnych angielskich nazw rang tier-1 z tej listy: <<careerList>>. Nie używaj nazw klas społecznych (Peasant, Burgher, Noble, Warrior itd.) — wybierz konkretną rangę (np. Boatman, Soldier, Scion). Zwróć płaską tablicę JSON bez zmiany pisowni i wielkości liter.",
       "StageTalentsPrompt": "4. Na podstawie poprzednich kroków wybierz liczbę Talentów (Talent): <<noOfTalents>> spośród dostępnych w podręczniku do angielskiej wersji systemu WFRP 4ed. Wybrane nazwy zwróć w formacie płaskiej tabeli JSON bez żadnych struktur. Nie zmieniaj wielkości liter. Nie zmieniaj wartości ani nazw. Nie odmieniaj nazw talentów.",
-
       "WS": "WW",
       "BS": "WS",
       "S": "S",
@@ -175,7 +167,6 @@
       "Int": "Int",
       "WP": "SW",
       "Fel": "Ogd",
-
       "Hair": "Włosy",
       "Eyes": "Oczy",
       "Height": "Wzrost",

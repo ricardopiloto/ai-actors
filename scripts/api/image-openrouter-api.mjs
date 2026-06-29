@@ -4,6 +4,8 @@ import {
   generateOpenRouterImage,
   OpenRouterSettings,
 } from "./openrouter-image.mjs";
+import { ImageProviders } from "./providers.mjs";
+import { registerModuleSetting } from "./settings-ui.mjs";
 
 export default class ImageOpenRouterApi {
   static apiKeyKey = OpenRouterSettings.apiKeyKey;
@@ -12,7 +14,7 @@ export default class ImageOpenRouterApi {
   static appNameKey = OpenRouterSettings.appNameKey;
 
   static registerSettings() {
-    game.settings.register(Constants.ID, ImageOpenRouterApi.apiKeyKey, {
+    registerModuleSetting(ImageOpenRouterApi.apiKeyKey, { group: "image", provider: ImageProviders.OPENROUTER }, {
       name: "AActors.Settings.Image.openrouterApiKey.Name",
       hint: "AActors.Settings.Image.openrouterApiKey.Hint",
       scope: "world",
@@ -22,7 +24,7 @@ export default class ImageOpenRouterApi {
       default: "",
     });
 
-    game.settings.register(Constants.ID, ImageOpenRouterApi.modelKey, {
+    registerModuleSetting(ImageOpenRouterApi.modelKey, { group: "image", provider: ImageProviders.OPENROUTER }, {
       name: "AActors.Settings.Image.openrouterImageModel.Name",
       hint: "AActors.Settings.Image.openrouterImageModel.Hint",
       scope: "world",
@@ -32,7 +34,7 @@ export default class ImageOpenRouterApi {
       default: DEFAULT_OPENROUTER_IMAGE_MODEL,
     });
 
-    game.settings.register(Constants.ID, ImageOpenRouterApi.siteUrlKey, {
+    registerModuleSetting(ImageOpenRouterApi.siteUrlKey, { group: "image", provider: ImageProviders.OPENROUTER }, {
       name: "AActors.Settings.Image.openrouterSiteUrl.Name",
       hint: "AActors.Settings.Image.openrouterSiteUrl.Hint",
       scope: "world",
@@ -42,7 +44,7 @@ export default class ImageOpenRouterApi {
       default: "",
     });
 
-    game.settings.register(Constants.ID, ImageOpenRouterApi.appNameKey, {
+    registerModuleSetting(ImageOpenRouterApi.appNameKey, { group: "image", provider: ImageProviders.OPENROUTER }, {
       name: "AActors.Settings.Image.openrouterAppName.Name",
       hint: "AActors.Settings.Image.openrouterAppName.Hint",
       scope: "world",

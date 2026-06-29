@@ -1,5 +1,5 @@
 import InputModel from "../model/input-model.mjs";
-import { findWfrpItems, getWfrpNpcInitialItems, getWfrpUtility, resolveWfrpSpecies } from "../compat.mjs";
+import { findWfrpCareer, findWfrpItems, findWfrpTalent, getWfrpNpcInitialItems, getWfrpUtility, resolveWfrpSpecies } from "../compat.mjs";
 
 export default class WfrpOpenAiDetailsApi {
   
@@ -41,21 +41,24 @@ export default class WfrpOpenAiDetailsApi {
       inputModel.JsonFormat.npc.details = inputModel.JsonFormat.npc.details || {};
       inputModel.JsonFormat.npc.details.species = "";
       inputModel.JsonFormat.npc.details.gender = "";
-      inputModel.JsonFormat.npc.details.age = "";
-      inputModel.JsonFormat.npc.details.height = "";
-      inputModel.JsonFormat.npc.details.weight = "";
+      inputModel.JsonFormat.npc.details.age = 35;
+      inputModel.JsonFormat.npc.details.height = 175;
+      inputModel.JsonFormat.npc.details.weight = 70;
       inputModel.JsonFormat.npc.details.hair = "";
       inputModel.JsonFormat.npc.details.eyes = "";
     } else if (stage.stage === "careers") {
-      const careersMessage = game.i18n.localize("AActors.WFRP.StageCareersPrompt").replaceAll('<<noOfCareers>>', actorInput.noOfCareers);
+      const careerNames = WfrpOpenAiDetailsApi.#getTier1CareerNameList(WfrpOpenAiDetailsApi.careers);
+      const careersMessage = game.i18n.localize("AActors.WFRP.StageCareersPrompt")
+        .replaceAll("<<noOfCareers>>", actorInput.noOfCareers)
+        .replaceAll("<<careerList>>", careerNames.join(", "));
       inputModel.TextPrompt += "\n" + careersMessage;
       inputModel.JsonFormat.npc = inputModel.JsonFormat.npc || {};
-      inputModel.JsonFormat.npc.careers = ["career name"];
+      inputModel.JsonFormat.npc.careers = ["Boatman"];
     } else if (stage.stage === "talents") {
       const talentsMessage = game.i18n.localize("AActors.WFRP.StageTalentsPrompt").replaceAll('<<noOfTalents>>', actorInput.noOfTalents);
       inputModel.TextPrompt += "\n" + talentsMessage;
       inputModel.JsonFormat.npc = inputModel.JsonFormat.npc || {};
-      inputModel.JsonFormat.npc.talents = ["talent name"];
+      inputModel.JsonFormat.npc.talents = ["Fisherman"];
     }
   }
 
@@ -79,31 +82,33 @@ export default class WfrpOpenAiDetailsApi {
     npc.characteristics.willPower = eval(modifier) + Number(npc.characteristics.willPower);
     npc.characteristics.fellowship = eval(modifier) + Number(npc.characteristics.fellowship);
 
-    if (parseInt(npc.details.height)) {
-      npc.details.height = Math.floor(Math.random() * 20 - 10) + parseInt(npc.details.height) + " cm"
-    }
-    if (parseInt(npc.details.weight)) {
-      npc.details.weight = Math.floor(Math.random() * 20 - 10) + parseInt(npc.details.weight) + " kg"
-    }
     if (parseInt(npc.details.age)) {
       npc.details.age = Math.floor(Math.random() * 20 - 10) + parseInt(npc.details.age);
     }
 
+    WfrpOpenAiDetailsApi.#normalizeHeightWeight(npc.details);
+
     for (let career of originalCareers) {
-      const match = WfrpOpenAiDetailsApi.#resolveCareerMatch(WfrpOpenAiDetailsApi.careers, career);
+      const match = await WfrpOpenAiDetailsApi.#resolveCareerMatch(WfrpOpenAiDetailsApi.careers, career);
       if (match) {
         npc.careers.push(match);
       } else {
-        npc.careers.push({ name: career, uuid: null, originalName: career });
+        const label = WfrpOpenAiDetailsApi.#normalizeItemQuery(career, /^career\s*name$/i);
+        if (label) {
+          npc.careers.push({ name: label, uuid: null, originalName: label });
+        }
       }
     }
 
     for (let talent of originalTalents) {
-      const match = WfrpOpenAiDetailsApi.#resolveTalentMatch(WfrpOpenAiDetailsApi.talents, talent);
+      const match = await WfrpOpenAiDetailsApi.#resolveTalentMatch(WfrpOpenAiDetailsApi.talents, talent);
       if (match) {
         npc.talents.push(match);
       } else {
-        npc.talents.push({ name: talent, uuid: null, originalName: talent });
+        const label = WfrpOpenAiDetailsApi.#normalizeItemQuery(talent, /^talent\s*name$/i);
+        if (label) {
+          npc.talents.push({ name: label, uuid: null, originalName: label });
+        }
       }
     }
   }
@@ -182,31 +187,167 @@ export default class WfrpOpenAiDetailsApi {
     return html;
   }
     
-  static #resolveTalentMatch(talents, talentName) {
-    const query = talentName.trim();
-    const queryLower = query.toLowerCase();
-    const queryBase = query.split("(")[0].trim().toLowerCase();
+  static #normalizeItemQuery(raw, placeholderPattern) {
+    if (raw == null) return null;
+    if (typeof raw === "object") {
+      raw = raw.name ?? raw.career ?? raw.talent ?? raw.title ?? "";
+    }
+    const query = String(raw).trim();
+    if (!query || placeholderPattern.test(query)) {
+      return null;
+    }
+    return query;
+  }
 
-    let matches = talents.filter((talent) =>
-      talent.name === query
-      || talent.flags?.babele?.originalName === query
-      || talent.name.toLowerCase() === queryLower
-      || talent.name.toLowerCase().startsWith(`${queryBase} (`)
-      || talent.flags?.babele?.originalName?.toLowerCase() === queryLower
-    );
+  static #extractBaseName(name = "") {
+    return name.split("(")[0].trim();
+  }
+
+  static #getTier1CareerNameList(careers) {
+    return [...new Set(
+      careers
+        .filter((career) => Number(career.system?.level?.value ?? 1) === 1)
+        .map((career) => career.flags?.babele?.originalName ?? career.name)
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b)),
+    )];
+  }
+
+  static #careerDisplayName(career) {
+    return career.flags?.babele?.originalName ?? career.name ?? "";
+  }
+
+  static async #resolveCareerMatch(careers, careerName) {
+    const query = WfrpOpenAiDetailsApi.#normalizeItemQuery(careerName, /^career\s*name$/i);
+    if (!query) return null;
+
+    const found = await findWfrpCareer(query);
+    if (found) {
+      return {
+        name: found.name,
+        uuid: found.uuid,
+        originalName: query,
+      };
+    }
+
+    return WfrpOpenAiDetailsApi.#matchCareerFromList(careers, query);
+  }
+
+  static #matchCareerFromList(careers, query) {
+    const queryLower = query.toLowerCase();
+    const queryBase = WfrpOpenAiDetailsApi.#extractBaseName(query).toLowerCase();
+
+    let matches = careers.filter((career) => {
+      const englishName = career.flags?.babele?.originalName ?? "";
+      return career.name === query
+        || englishName === query
+        || career.name.toLowerCase() === queryLower
+        || englishName.toLowerCase() === queryLower;
+    });
+
+    if (!matches.length) {
+      matches = careers.filter((career) => {
+        const displayName = WfrpOpenAiDetailsApi.#careerDisplayName(career);
+        const baseName = WfrpOpenAiDetailsApi.#extractBaseName(displayName).toLowerCase();
+        return baseName === queryBase
+          || displayName.toLowerCase().startsWith(`${queryBase} (`);
+      });
+    }
+
+    if (!matches.length) {
+      matches = careers.filter((career) =>
+        Number(career.system?.level?.value ?? 1) === 1
+        && career.system?.careergroup?.value?.toLowerCase() === queryLower,
+      );
+    }
+
+    if (!matches.length) {
+      matches = careers
+        .map((career) => {
+          const displayName = WfrpOpenAiDetailsApi.#careerDisplayName(career).toLowerCase();
+          const englishName = career.flags?.babele?.originalName?.toLowerCase() ?? displayName;
+          return {
+            career,
+            index: Math.min(
+              WfrpOpenAiDetailsApi.levenshtein(displayName, queryLower),
+              WfrpOpenAiDetailsApi.levenshtein(englishName, queryLower),
+            ),
+          };
+        })
+        .filter((entry) => entry.index <= 4)
+        .sort((a, b) => a.index - b.index)
+        .map((entry) => entry.career);
+    }
+
+    if (!matches.length) {
+      return null;
+    }
+
+    const tierOne = matches.filter((career) => Number(career.system?.level?.value ?? 1) === 1);
+    const pool = tierOne.length ? tierOne : matches;
+    const pick = pool.find((career) => {
+      const englishName = career.flags?.babele?.originalName ?? "";
+      return career.name.toLowerCase() === queryLower || englishName.toLowerCase() === queryLower;
+    }) ?? pool[0];
+
+    return {
+      name: pick.name,
+      uuid: pick.uuid,
+      originalName: query,
+    };
+  }
+
+  static async #resolveTalentMatch(talents, talentName) {
+    const query = WfrpOpenAiDetailsApi.#normalizeItemQuery(talentName, /^talent\s*name$/i);
+    if (!query) return null;
+
+    const found = await findWfrpTalent(query);
+    if (found) {
+      return {
+        name: found.name,
+        uuid: found.uuid,
+        originalName: query,
+      };
+    }
+
+    return WfrpOpenAiDetailsApi.#matchTalentFromList(talents, query);
+  }
+
+  static #matchTalentFromList(talents, query) {
+    const queryLower = query.toLowerCase();
+    const queryBase = WfrpOpenAiDetailsApi.#extractBaseName(query).toLowerCase();
+
+    let matches = talents.filter((talent) => {
+      const englishName = talent.flags?.babele?.originalName ?? "";
+      return talent.name === query
+        || englishName === query
+        || talent.name.toLowerCase() === queryLower
+        || englishName.toLowerCase() === queryLower;
+    });
+
+    if (!matches.length) {
+      matches = talents.filter((talent) => {
+        const displayName = talent.flags?.babele?.originalName ?? talent.name ?? "";
+        const baseName = WfrpOpenAiDetailsApi.#extractBaseName(displayName).toLowerCase();
+        return baseName === queryBase
+          || displayName.toLowerCase().startsWith(`${queryBase} (`);
+      });
+    }
 
     if (!matches.length) {
       matches = talents
-        .map((talent) => ({
-          talent,
-          index: talent.flags?.babele?.originalName
-            ? Math.min(
-              WfrpOpenAiDetailsApi.levenshtein(talent.name, query),
-              WfrpOpenAiDetailsApi.levenshtein(talent.flags.babele.originalName, query),
-            )
-            : WfrpOpenAiDetailsApi.levenshtein(talent.name, query),
-        }))
-        .filter((entry) => entry.index < 10)
+        .map((talent) => {
+          const displayName = (talent.flags?.babele?.originalName ?? talent.name ?? "").toLowerCase();
+          const englishName = talent.flags?.babele?.originalName?.toLowerCase() ?? displayName;
+          return {
+            talent,
+            index: Math.min(
+              WfrpOpenAiDetailsApi.levenshtein(displayName, queryLower),
+              WfrpOpenAiDetailsApi.levenshtein(englishName, queryLower),
+            ),
+          };
+        })
+        .filter((entry) => entry.index <= 4)
         .sort((a, b) => a.index - b.index)
         .map((entry) => entry.talent);
     }
@@ -215,7 +356,10 @@ export default class WfrpOpenAiDetailsApi {
       return null;
     }
 
-    const exact = matches.find((talent) => talent.name.toLowerCase() === queryLower);
+    const exact = matches.find((talent) => {
+      const englishName = talent.flags?.babele?.originalName ?? "";
+      return talent.name.toLowerCase() === queryLower || englishName.toLowerCase() === queryLower;
+    });
     const pick = exact ?? matches[0];
 
     return {
@@ -232,47 +376,6 @@ export default class WfrpOpenAiDetailsApi {
       type: "talent",
       img: "systems/wfrp4e/icons/blank.png",
       system,
-    };
-  }
-
-  static #resolveCareerMatch(careers, careerName) {
-    const query = careerName.trim();
-    const queryLower = query.toLowerCase();
-
-    let matches = careers.filter((career) =>
-      career.name === query
-      || career.flags?.babele?.originalName === query
-      || career.name.toLowerCase() === queryLower
-      || career.system?.careergroup?.value?.toLowerCase() === queryLower
-    );
-
-    if (!matches.length) {
-      matches = careers
-        .map((career) => ({
-          career,
-          index: career.flags?.babele?.originalName
-            ? Math.min(
-              WfrpOpenAiDetailsApi.levenshtein(career.name, query),
-              WfrpOpenAiDetailsApi.levenshtein(career.flags.babele.originalName, query),
-            )
-            : WfrpOpenAiDetailsApi.levenshtein(career.name, query),
-        }))
-        .filter((entry) => entry.index < 10)
-        .sort((a, b) => a.index - b.index)
-        .map((entry) => entry.career);
-    }
-
-    if (!matches.length) {
-      return null;
-    }
-
-    const tierOne = matches.filter((career) => Number(career.system?.level?.value ?? 1) === 1);
-    const pick = tierOne[0] ?? matches[0];
-
-    return {
-      name: pick.name,
-      uuid: pick.uuid,
-      originalName: query,
     };
   }
 
@@ -362,6 +465,117 @@ export default class WfrpOpenAiDetailsApi {
     const tb = WfrpOpenAiDetailsApi.#characteristicBonus(characteristics.toughness);
     system.status.criticalWounds ??= { value: 0, max: tb };
     system.status.criticalWounds.max = tb;
+  }
+
+  static #extractFirstNumber(raw) {
+    if (raw == null || raw === "") return null;
+    if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+    const normalized = String(raw).trim().toLowerCase().replace(/,/g, ".");
+    const match = normalized.match(/(\d+(?:\.\d+)?)/);
+    return match ? parseFloat(match[1]) : null;
+  }
+
+  static #parseHeightCm(raw) {
+    const text = String(raw ?? "").trim().toLowerCase();
+    let value = WfrpOpenAiDetailsApi.#extractFirstNumber(raw);
+    if (value == null) return null;
+
+    const hasCm = /\bcm\b|centimet/.test(text);
+    const hasM = /\b(m|meter|metre|metros?)\b/.test(text) || /\d\s*m\b/.test(text);
+    const hasFt = /\b(ft|foot|feet|')\b/.test(text);
+
+    if (hasM || (!hasCm && value > 0 && value < 3)) {
+      value *= 100;
+    } else if (hasFt) {
+      value *= 30.48;
+    }
+
+    return Math.round(value);
+  }
+
+  static #parseWeightKg(raw) {
+    const text = String(raw ?? "").trim().toLowerCase();
+    let value = WfrpOpenAiDetailsApi.#extractFirstNumber(raw);
+    if (value == null) return null;
+
+    if (/\b(st|stone|stones)\b/.test(text)) {
+      value *= 6.35029;
+    } else if (/\b(lb|lbs|pound|pounds)\b/.test(text)) {
+      value *= 0.453592;
+    }
+
+    return Math.round(value);
+  }
+
+  static #looksLikeHeightCm(value) {
+    return value >= 80 && value <= 260;
+  }
+
+  static #looksLikeWeightKg(value) {
+    return value >= 25 && value <= 200;
+  }
+
+  static #shouldSwapHeightWeight(heightCm, weightKg) {
+    if (heightCm == null || weightKg == null) return false;
+    if (heightCm < 50 && weightKg > 100) return true;
+    if (
+      WfrpOpenAiDetailsApi.#looksLikeHeightCm(weightKg)
+      && WfrpOpenAiDetailsApi.#looksLikeWeightKg(heightCm)
+      && !WfrpOpenAiDetailsApi.#looksLikeHeightCm(heightCm)
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  static #formatHeightCm(cm) {
+    const jittered = cm + Math.floor(Math.random() * 20 - 10);
+    return `${Math.max(50, jittered)} cm`;
+  }
+
+  static #formatWeightKg(kg) {
+    const jittered = kg + Math.floor(Math.random() * 20 - 10);
+    return `${Math.max(20, jittered)} kg`;
+  }
+
+  static #normalizeHeightWeight(details) {
+    let heightRaw = details.height;
+    let weightRaw = details.weight;
+    let heightCm = WfrpOpenAiDetailsApi.#parseHeightCm(heightRaw);
+    let weightKg = WfrpOpenAiDetailsApi.#parseWeightKg(weightRaw);
+    let swapped = false;
+
+    if (WfrpOpenAiDetailsApi.#shouldSwapHeightWeight(heightCm, weightKg)) {
+      swapped = true;
+      [heightRaw, weightRaw] = [weightRaw, heightRaw];
+      heightCm = WfrpOpenAiDetailsApi.#parseHeightCm(heightRaw);
+      weightKg = WfrpOpenAiDetailsApi.#parseWeightKg(weightRaw);
+    }
+
+    if (
+      heightCm != null
+      && weightKg != null
+      && WfrpOpenAiDetailsApi.#looksLikeHeightCm(heightCm)
+      && WfrpOpenAiDetailsApi.#looksLikeHeightCm(weightKg)
+      && Math.abs(weightKg - heightCm) <= 10
+    ) {
+      weightKg = Math.max(45, Math.round(heightCm - 100));
+    } else if (
+      swapped
+      && heightCm != null
+      && WfrpOpenAiDetailsApi.#looksLikeHeightCm(heightCm)
+      && !WfrpOpenAiDetailsApi.#looksLikeWeightKg(weightKg)
+    ) {
+      weightKg = Math.max(45, Math.round(heightCm - 100));
+    }
+
+    if (heightCm != null && WfrpOpenAiDetailsApi.#looksLikeHeightCm(heightCm)) {
+      details.height = WfrpOpenAiDetailsApi.#formatHeightCm(heightCm);
+    }
+
+    if (weightKg != null && WfrpOpenAiDetailsApi.#looksLikeWeightKg(weightKg)) {
+      details.weight = WfrpOpenAiDetailsApi.#formatWeightKg(weightKg);
+    }
   }
 
   static #setDetailValue(details, field, value) {

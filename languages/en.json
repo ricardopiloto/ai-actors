@@ -24,14 +24,27 @@
       "LlmApiKeyMissingNamed": "Configure \"{setting}\" in Configure Settings → Module Settings → AI Generated NPCs.",
       "OpenRouterConfigMissing": "Configure your OpenRouter API key in module settings.",
       "OpenRouterImageFailed": "OpenRouter image generation failed for model \"{model}\": {details}",
-      "OpenRouterImageEmpty": "OpenRouter returned no image data."
+      "OpenRouterImageEmpty": "OpenRouter returned no image data.",
+      "LlmJsonInvalid": "The LLM returned invalid JSON: {details}. Try lowering temperature or reducing description complexity.",
+      "LlmJsonTruncated": "The LLM response was cut off before the JSON finished (increase Max Tokens in module settings)."
     },
     "Notifications": {
       "LegacySettingsMigrated": "AI Generated NPCs migrated {count} settings from the previous module version.",
       "CloudflareRemovedMigrated": "Cloudflare image generation was removed. Image provider switched to OpenRouter — configure your OpenRouter API key in module settings.",
-      "ImageGenerationSkipped": "Portrait generation was skipped. You can save the NPC without an image or use Generate Image to try again."
+      "RemovedImageProviderMigrated": "An unsupported image provider was removed. Image provider switched to OpenRouter — review module settings.",
+      "ImageGenerationSkipped": "Portrait generation was skipped. You can save the NPC without an image or use Generate Image to try again.",
+      "LlmJsonRetrying": "NPC JSON was invalid or incomplete. Retrying with stricter instructions..."
     },
     "Settings": {
+      "Sections": {
+        "LLMConfig": "LLM configuration",
+        "ImageConfig": "Image generation configuration",
+        "Anthropic": "Anthropic",
+        "OpenAI": "OpenAI",
+        "DeepSeek": "DeepSeek",
+        "OpenRouter": "OpenRouter",
+        "OpenAIImage": "OpenAI (DALL-E)"
+      },
       "imageFolderLocation": {
         "Name": "Image Folder Location",
         "Hint": "Provide a location where the images will be saved, if folder doesn't exist it will be created"
@@ -39,9 +52,18 @@
       "LLM": {
         "llmProvider": {
           "Name": "LLM Provider",
-          "Hint": "Choose which API generates NPC text and chat responses.",
+          "Hint": "Choose which API generates NPC details and chat responses.",
           "OpenAI": "OpenAI",
+          "Anthropic": "Anthropic",
           "DeepSeek": "DeepSeek"
+        },
+        "anthropicApiKey": {
+          "Name": "Anthropic API Key",
+          "Hint": "API key from https://console.anthropic.com/"
+        },
+        "anthropicModel": {
+          "Name": "Anthropic Model",
+          "Hint": "Model identifier, e.g. claude-sonnet-4-20250514"
         },
         "deepseekApiKey": {
           "Name": "DeepSeek API Key",
@@ -57,8 +79,7 @@
           "Name": "Image Provider",
           "Hint": "Choose which API generates NPC portraits and /whisper img images.",
           "OpenRouter": "OpenRouter",
-          "OpenAI": "OpenAI (DALL-E)",
-          "MidJourney": "MidJourney (Discord)"
+          "OpenAI": "OpenAI (DALL-E)"
         },
         "openrouterApiKey": {
           "Name": "OpenRouter API Key",
@@ -118,48 +139,25 @@
           "Name": "OpenAI Chat Model",
           "Hint": "OpenAI model used when LLM Provider is set to OpenAI"
         }
-      },
-      "MJ": {
-        "authorizationHeader": {
-          "Name": "Discord Authorization Header",
-          "Hint": "Provide an Authorization Header to access the API, for details please check this link: https://medium.com/@useapi.net/interact-with-midjourney-using-discord-api-5a2e150f5e97"
-        },
-        "channelId": {
-          "Name": "Discord Channel Id",
-          "Hint": "Provide a Discord Channel Id"
-        },
-        "appId": {
-          "Name": "Midjourney App Id",
-          "Hint": "Provide an App Id"
-        },
-        "guildId": {
-          "Name": "Discord Guild Id",
-          "Hint": "Provide a Guild Id"
-        },
-        "sessionId": {
-          "Name": "Discord Session Id",
-          "Hint": "Provide a Session Id"
-        },
-        "imagineCommandVersionId": {
-          "Name": "MidJourney Imagine Command Version Id",
-          "Hint": "Provide an Imagine Command Version Id"
-        },
-        "imagineCommandId": {
-          "Name": "MidJourney Imagine Command Id",
-          "Hint": "Provide an Imagine Command Id"
-        }
       }
     },
     "OpenAI": {
       "DefaultSystemPrompt": "You are a helpful and creative assistant to the Game Master in 4th Edition Warhammer Fantasy RPG. You help by providing descriptions and basic characteristics for NPCs, description of places, stories and adventures. Use the lore and history of Warhammer Fantasy World and be inspired by other fantasy literature or movies. Use an artistic style based on novels and stories. Do not use calculations and bullet points.",
-      "TechnicalSystemPrompt": " Return the description in html format, without css. Return the response in json format given at the end of prompt. Don't skip any JSON field. In 'description' field put NPC's description\n 1. In apperance field: NPC's face description, body description, clothes. Write  <<noOfSentences>> sentences\n 2. In personality field: NPC's character, his attitude. Write <<noOfSentences>> sentences\n 3. In motivations field: NPc's motiviations, live goals, what drives him. Write <<noOfSentences>> sentences\n 4. In biography field: NPC's biography with events that shaped him. Write <<noOfSentences>> sentences\n 5. In specificTraits field: NPC's special or characteristics features or traits. Write <<noOfSentencesHalved>> sentences",
+      "TechnicalSystemPrompt": " Return NPC text fields as plain text only (no HTML tags). Return one valid JSON object matching the schema at the end of this prompt. Do not skip fields. Do not wrap the response in markdown. Never put raw line breaks or double-quote characters inside JSON string values; use \\n and avoid quotation marks in the prose. Keep each description sub-field concise: at most <<noOfSentences>> short sentences.\n 1. appearance: face, body, clothes\n 2. personality: character and attitude\n 3. motivations: goals and drives\n 4. biography: formative events\n 5. specificTraits: distinctive features (<<noOfSentencesHalved>> sentences max)",
+      "JsonRepairPrompt": "Your previous answer was invalid JSON. Reply with ONLY one valid JSON object matching the required schema. Use plain text in all description fields (no HTML). Do not use double-quote characters inside string values. Keep every description field brief.",
+      "JsonTruncatedHint": "The previous response was too long and got cut off. Return a shorter valid JSON object with briefer description fields while keeping all required keys.",
+      "JsonRetryShortHint": "Use at most 2 short sentences per description field. Prioritize valid JSON over detail.",
       "InitialMessage": "Generating NPC Description...",
+      "StageImage": "Generating NPC Image...",
       "ImageMessage": "Generating NPC Image...",
       "StageImagePrompt": "- Finally, based on all prepared content, prepare description in English for the purpose of generating an image. The description should start with '<<additionalImageQualities>>. A portrait of'. Return the generated description in JSON format."
     },
     "WFRP": {
-      "StageCharacteristicsPrompt": "1. Based on previous steps, return the NPC's characteristics in JSON format. Fill in the characteristics fields with numerical values on a scale from 1 to 100, where 0 is none, 100 is legendary. in 'name' field write NPC's name, if none provide, propose one.\n 2. Based on previous steps, return the NPC's details in fields: species, gender, age, height, weight, hair, eyes.",
-      "StageCareersPrompt": "3. Based on the previous steps, select a <<noOfCareers>> number of career from those available in the English version of WFRP 4ed handbook. Return the selected names in a flat JSON table format. Do not change the case.",
+      "StageCharacteristics": "Generating NPC characteristics...",
+      "StageCareers": "Selecting careers...",
+      "StageTalents": "Selecting talents...",
+      "StageCharacteristicsPrompt": "1. Based on previous steps, return the NPC's characteristics in JSON format. Fill in the characteristics fields with numerical values on a scale from 1 to 100, where 0 is none, 100 is legendary. in 'name' field write NPC's name, if none provide, propose one.\n 2. Based on previous steps, return the NPC's details in fields: species, gender, age, height, weight, hair, eyes. Put age as an integer (years). Put height as an integer in centimeters only (example: 175, not 1.75m). Put weight as an integer in kilograms only (example: 70, not 11 stone). Do not swap height and weight.",
+      "StageCareersPrompt": "3. Based on the previous steps, select <<noOfCareers>> career(s). Use exact tier-1 English career rank names from this list only: <<careerList>>. Do not use social class names (Peasant, Burgher, Noble, Warrior, etc.) — pick a specific rank (e.g. Boatman, Soldier, Scion). Return names in a flat JSON array. Do not change spelling or case.",
       "StageTalentsPrompt": "4. Based on previous steps, select <<noOfTalents>> number of Talents from those available in the English version of WFRP 4ed handbook. Return the selected names in a flat JSON table format without any structures. Do not change the case. Do not change values. Don't change the names of talents.",
       "WS": "WS",
       "BS": "BS",

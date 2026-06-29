@@ -1,31 +1,24 @@
 import { Constants } from "../constants.mjs";
 import ActorAiOpenAiApi from "./actor-ai-open-ai-api.mjs";
-import ImageMidJourneyApi from "./image-mj-api.mjs";
 import ImageOpenAiApi from "./image-open-ai-api.mjs";
 import ImageOpenRouterApi from "./image-openrouter-api.mjs";
+import { registerModuleSetting } from "./settings-ui.mjs";
 
-export const LlmProviders = {
-  OPENAI: "openai",
-  DEEPSEEK: "deepseek",
-};
-
-export const ImageProviders = {
-  OPENROUTER: "openrouter",
-  OPENAI: "openai",
-  MIDJOURNEY: "midjourney",
-};
+import { ImageProviders, LlmProviders } from "./providers.mjs";
 
 export default class AiSettings {
   static LEGACY_ID = "aactors";
   static llmProviderKey = "llmProvider";
   static deepseekApiKey = "deepseekApiKey";
   static deepseekModelKey = "deepseekModel";
+  static anthropicApiKey = "anthropicApiKey";
+  static anthropicModelKey = "anthropicModel";
   static imageProviderKey = "imageProvider";
   static openrouterApiKeyKey = ImageOpenRouterApi.apiKeyKey;
   static openrouterImageModelKey = ImageOpenRouterApi.modelKey;
 
   static initialize() {
-    game.settings.register(Constants.ID, AiSettings.llmProviderKey, {
+    registerModuleSetting(AiSettings.llmProviderKey, "llm-selector", {
       name: "AActors.Settings.LLM.llmProvider.Name",
       hint: "AActors.Settings.LLM.llmProvider.Hint",
       scope: "world",
@@ -35,31 +28,17 @@ export default class AiSettings {
       default: LlmProviders.OPENAI,
       choices: {
         [LlmProviders.OPENAI]: "AActors.Settings.LLM.llmProvider.OpenAI",
+        [LlmProviders.ANTHROPIC]: "AActors.Settings.LLM.llmProvider.Anthropic",
         [LlmProviders.DEEPSEEK]: "AActors.Settings.LLM.llmProvider.DeepSeek",
       },
     });
 
-    game.settings.register(Constants.ID, AiSettings.deepseekApiKey, {
-      name: "AActors.Settings.LLM.deepseekApiKey.Name",
-      hint: "AActors.Settings.LLM.deepseekApiKey.Hint",
-      scope: "world",
-      config: true,
-      restricted: true,
-      type: String,
-      default: "",
-    });
+    AiSettings.#registerAnthropicSettings();
+    ActorAiOpenAiApi.registerLlmSettings();
+    AiSettings.#registerDeepseekSettings();
+    ActorAiOpenAiApi.registerSharedLlmSettings();
 
-    game.settings.register(Constants.ID, AiSettings.deepseekModelKey, {
-      name: "AActors.Settings.LLM.deepseekModel.Name",
-      hint: "AActors.Settings.LLM.deepseekModel.Hint",
-      scope: "world",
-      config: true,
-      restricted: true,
-      type: String,
-      default: "deepseek-chat",
-    });
-
-    game.settings.register(Constants.ID, AiSettings.imageProviderKey, {
+    registerModuleSetting(AiSettings.imageProviderKey, "image-selector", {
       name: "AActors.Settings.Image.imageProvider.Name",
       hint: "AActors.Settings.Image.imageProvider.Hint",
       scope: "world",
@@ -70,11 +49,65 @@ export default class AiSettings {
       choices: {
         [ImageProviders.OPENROUTER]: "AActors.Settings.Image.imageProvider.OpenRouter",
         [ImageProviders.OPENAI]: "AActors.Settings.Image.imageProvider.OpenAI",
-        [ImageProviders.MIDJOURNEY]: "AActors.Settings.Image.imageProvider.MidJourney",
       },
     });
 
     ImageOpenRouterApi.registerSettings();
+    ActorAiOpenAiApi.registerImageSettings();
+
+    registerModuleSetting(Constants.imageFolderLocation, "general", {
+      name: "AActors.Settings.imageFolderLocation.Name",
+      hint: "AActors.Settings.imageFolderLocation.Hint",
+      scope: "world",
+      config: true,
+      restricted: true,
+      type: String,
+      default: "ai-images",
+    });
+  }
+
+  static #registerAnthropicSettings() {
+    registerModuleSetting(AiSettings.anthropicApiKey, { group: "llm", provider: LlmProviders.ANTHROPIC }, {
+      name: "AActors.Settings.LLM.anthropicApiKey.Name",
+      hint: "AActors.Settings.LLM.anthropicApiKey.Hint",
+      scope: "world",
+      config: true,
+      restricted: true,
+      type: String,
+      default: "",
+    });
+
+    registerModuleSetting(AiSettings.anthropicModelKey, { group: "llm", provider: LlmProviders.ANTHROPIC }, {
+      name: "AActors.Settings.LLM.anthropicModel.Name",
+      hint: "AActors.Settings.LLM.anthropicModel.Hint",
+      scope: "world",
+      config: true,
+      restricted: true,
+      type: String,
+      default: "claude-sonnet-4-20250514",
+    });
+  }
+
+  static #registerDeepseekSettings() {
+    registerModuleSetting(AiSettings.deepseekApiKey, { group: "llm", provider: LlmProviders.DEEPSEEK }, {
+      name: "AActors.Settings.LLM.deepseekApiKey.Name",
+      hint: "AActors.Settings.LLM.deepseekApiKey.Hint",
+      scope: "world",
+      config: true,
+      restricted: true,
+      type: String,
+      default: "",
+    });
+
+    registerModuleSetting(AiSettings.deepseekModelKey, { group: "llm", provider: LlmProviders.DEEPSEEK }, {
+      name: "AActors.Settings.LLM.deepseekModel.Name",
+      hint: "AActors.Settings.LLM.deepseekModel.Hint",
+      scope: "world",
+      config: true,
+      restricted: true,
+      type: String,
+      default: "deepseek-chat",
+    });
   }
 
   static getLegacySettingValue(key) {
@@ -103,6 +136,15 @@ export default class AiSettings {
       };
     }
 
+    if (provider === LlmProviders.ANTHROPIC) {
+      return {
+        provider,
+        url: "https://api.anthropic.com/v1/messages",
+        apiKey: AiSettings.getStringSetting(AiSettings.anthropicApiKey),
+        model: AiSettings.getStringSetting(AiSettings.anthropicModelKey) || "claude-sonnet-4-20250514",
+      };
+    }
+
     return {
       provider: LlmProviders.OPENAI,
       url: "https://api.openai.com/v1/chat/completions",
@@ -112,9 +154,14 @@ export default class AiSettings {
   }
 
   static getLlmApiKeySettingName(provider = AiSettings.getLlmConfig().provider) {
-    return provider === LlmProviders.DEEPSEEK
-      ? game.i18n.localize("AActors.Settings.LLM.deepseekApiKey.Name")
-      : game.i18n.localize("AActors.Settings.OpenAI.openAiApiKey.Name");
+    switch (provider) {
+      case LlmProviders.DEEPSEEK:
+        return game.i18n.localize("AActors.Settings.LLM.deepseekApiKey.Name");
+      case LlmProviders.ANTHROPIC:
+        return game.i18n.localize("AActors.Settings.LLM.anthropicApiKey.Name");
+      default:
+        return game.i18n.localize("AActors.Settings.OpenAI.openAiApiKey.Name");
+    }
   }
 
   static assertLlmConfigured() {
@@ -159,18 +206,16 @@ export default class AiSettings {
     if (!game.user?.isGM) return;
 
     const provider = game.settings.get(Constants.ID, AiSettings.imageProviderKey);
-    if (provider !== "cloudflare") return;
+    if (provider !== "cloudflare" && provider !== "midjourney") return;
 
     await game.settings.set(Constants.ID, AiSettings.imageProviderKey, ImageProviders.OPENROUTER);
-    ui.notifications.info(game.i18n.localize("AActors.Notifications.CloudflareRemovedMigrated"));
+    ui.notifications.info(game.i18n.localize("AActors.Notifications.RemovedImageProviderMigrated"));
   }
 
   static getImageApi() {
     const provider = game.settings.get(Constants.ID, AiSettings.imageProviderKey);
 
     switch (provider) {
-      case ImageProviders.MIDJOURNEY:
-        return new ImageMidJourneyApi();
       case ImageProviders.OPENAI:
         return new ImageOpenAiApi();
       case ImageProviders.OPENROUTER:
