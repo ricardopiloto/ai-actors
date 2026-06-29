@@ -1,6 +1,6 @@
 # AI Generated NPCs
 
-AI Generated NPCs is a Foundry VTT Module that creates detailed NPCs using ChatGPT and Dall-E / MidJourney for their portraits. 
+AI Generated NPCs is a Foundry VTT Module that creates detailed NPCs using ChatGPT / Openrouter for their portraits. 
 
 ![image](https://raw.githubusercontent.com/silentmark/ai-actors/main/other/img1.png)
 

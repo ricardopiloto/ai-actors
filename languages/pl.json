@@ -3,6 +3,7 @@
     "General": {
       "Create": "Stwórz BNa z AI",
       "Send": "Wyślij do Skynetu",
+      "Description": "Opis",
       "DescriptionPlaceholder": "Podaj hasłowy opis BNa",
       "GenerateImage": "Generuj Portret",
       "SelectFolder": "Wybierz Folder",
@@ -25,6 +26,9 @@
       "OpenRouterConfigMissing": "Skonfiguruj klucz API OpenRouter w ustawieniach modułu.",
       "OpenRouterImageFailed": "Generowanie obrazu OpenRouter nie powiodło się dla modelu \"{model}\": {details}",
       "OpenRouterImageEmpty": "OpenRouter nie zwrócił danych obrazu.",
+      "ImagePromptEmpty": "Prompt obrazu jest pusty.",
+      "ImagePromptPolicyViolation": "Prompt obrazu narusza zasady treści dla generowania obrazów. Edytuj prompt i spróbuj ponownie.",
+      "ImagePromptUnfixable": "Nie udało się dostosować promptu obrazu do zasad treści. Edytuj go ręcznie i spróbuj ponownie.",
       "LlmJsonInvalid": "LLM zwróciło nieprawidłowy JSON: {details}. Spróbuj obniżyć temperaturę lub zmniejszyć złożoność opisu.",
       "LlmJsonTruncated": "Odpowiedź LLM została ucięta przed zakończeniem JSON (zwiększ Max Tokens w ustawieniach modułu)."
     },
@@ -32,6 +36,9 @@
       "LegacySettingsMigrated": "AI Generated NPCs przeniosło {count} ustawień z poprzedniej wersji modułu.",
       "CloudflareRemovedMigrated": "Generowanie obrazów Cloudflare zostało usunięte. Dostawca obrazów przełączony na OpenRouter — skonfiguruj klucz API OpenRouter w ustawieniach modułu.",
       "RemovedImageProviderMigrated": "Nieobsługiwany dostawca obrazów został usunięty. Dostawca przełączony na OpenRouter — sprawdź ustawienia modułu.",
+      "ImageGenerationSkipped": "Generowanie portretu zostało pominięte. Możesz zapisać NPC bez obrazu lub użyć Generuj obraz, aby spróbować ponownie.",
+      "ImagePromptSanitized": "Prompt obrazu został dostosowany, aby spełniać zasady treści.",
+      "ImagePromptReviewSkipped": "LLM nie jest skonfigurowany — prompt obrazu nie został sprawdzony pod kątem zgodności z zasadami treści.",
       "LlmJsonRetrying": "JSON postaci był nieprawidłowy lub niekompletny. Ponawiam z bardziej restrykcyjnymi instrukcjami..."
     },
     "Settings": {
@@ -148,7 +155,11 @@
       "JsonRetryShortHint": "Użyj maksymalnie 2 krótkich zdań na pole description. Priorytet: poprawny JSON, nie szczegółowość.",
       "InitialMessage": "Generowanie opisu BNa...",
       "StageImage": "Generowanie portretu BNa...",
-      "StageImagePrompt": "Jako ostatni krok, na podstawie przygotowanego opisu i biografii, przygotuj opis wyglądu po angielsku na potrzeby generowania portretu. Opis powinien zaczynać się od '<<additionalImageQualities>>. A portrait of'. Umieść opis w polue imagePrompt w zdefiniowanym JSON"
+      "StageImageValidation": "Walidacja promptu obrazu...",
+      "ImageMessage": "Generowanie portretu BNa...",
+      "StageImagePrompt": "Jako ostatni krok, na podstawie przygotowanego opisu i biografii, przygotuj bezpieczny (safe-for-work) prompt obrazu po angielsku w polu imagePrompt. Prompt musi spełniać zasady treści komercyjnych API obrazów: bez nagości, treści seksualnych, graficznej przemocy, symboli nienawiści, prawdziwych nazwisk celebrytów ani chronionych postaci. Opisz w pełni ubraną dorosłą postać fantasy. Opis powinien zaczynać się od '<<additionalImageQualities>>. A portrait of'. Umieść opis w polu imagePrompt w zdefiniowanym JSON.",
+      "ImagePromptReviewSystem": "Jesteś recenzentem bezpieczeństwa treści dla API generowania obrazów (DALL-E, Flux itp.). Upewnij się, że prompty portretów spełniają zasady dostawców.",
+      "ImagePromptReviewUser": "Przejrzyj ten prompt generowania obrazu. Jeśli narusza zasady treści (treści seksualne, nagość, gore, graficzna przemoc, nienawiść, działalność nielegalna, prawdziwe nazwiska celebrytów, nieletni w niewłaściwym kontekście lub chronione postacie wymienione z nazwy), przepisz go jako bezpieczny portret postaci fantasy RPG, zachowując ogólny wygląd, wiek dorosły, ubranie i otoczenie. Jeśli jest już zgodny, zwróć go z minimalnymi zmianami. Odpowiedz TYLKO finalnym promptem po angielsku — bez wyjaśnień.\n\nPrompt:\n<<prompt>>"
     },
     "WFRP": {
       "StageCharacteristics": "Generowanie statystyk BNa...",

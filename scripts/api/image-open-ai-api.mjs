@@ -1,5 +1,6 @@
 import { Constants } from "../constants.mjs";
 import ActorAiOpenAiApi from "./actor-ai-open-ai-api.mjs";
+import { prepareImagePromptForGeneration } from "./image-prompt-validator.mjs";
 
 export default class ImageOpenAiApi {
 
@@ -7,12 +8,16 @@ export default class ImageOpenAiApi {
     }
     
     async generateImage(prompt, actorInput) {
-      const OPENAI_API_KEY = game.settings.get(Constants.ID, ActorAiOpenAiApi.apiKey); // Replace with your actual API key
+      const safePrompt = await prepareImagePromptForGeneration(prompt);
+      if (actorInput) {
+        actorInput.imagePrompt = safePrompt;
+      }
+      const OPENAI_API_KEY = game.settings.get(Constants.ID, ActorAiOpenAiApi.apiKey);
 
       const dalleUrl = 'https://api.openai.com/v1/images/generations';
       const data = {
           model: "dall-e-3",
-          prompt: prompt,
+          prompt: safePrompt,
           n: 1,
           size: "1024x1024",
           response_format: "b64_json"

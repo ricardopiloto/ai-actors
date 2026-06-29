@@ -9,9 +9,12 @@
                         <img class="actor-ai-img-gen" src="icons/svg/mystery-man.svg" data-action="previewImage">
                     {{/if}}
                     {{#if (eq context.stage "final")}}
-                        <textarea name="actorInput.imagePrompt" class="actor-ai-image-description">{{actorInput.imagePrompt}}</textarea>
+                        <div class="form-group stacked actor-ai-image-prompt">
+                            <label>{{localize "AActors.General.GenerateImage"}}</label>
+                            <textarea name="actorInput.imagePrompt" class="actor-ai-image-description">{{actorInput.imagePrompt}}</textarea>
+                        </div>
                         <div class="actor-ai-img-buttons">
-                            <button type="button" data-action="generate">{{localize "AActors.General.GenerateImage"}}</button>
+                            <button type="button" class="sheet-button" data-action="generate">{{localize "AActors.General.GenerateImage"}}</button>
                         </div>
                     {{/if}}
                 </div>
@@ -26,15 +29,20 @@
                     <div class="actor-ai-loader"></div>
                     <div class="actor-ai-loader-message">
                         {{ context.stageDescription }}
-                    </div>   
+                    </div>
                 {{/if}}
             </div>
         </div>
-        <div class="actor-ai-inputs">
-            <select name="folder" data-dtype="String" class="selector actor-ai-folders">
-                {{selectOptions folders selected=folder valueAttr="value" labelAttr="name" localize=false}}
-            </select>
+        <footer class="form-footer actor-ai-footer">
+            <div class="form-group">
+                <label>{{localize "AActors.General.SelectFolder"}}</label>
+                <div class="form-fields">
+                    <select name="folder" data-dtype="String" class="actor-ai-folders">
+                        {{selectOptions folders selected=folder valueAttr="value" labelAttr="name" localize=false}}
+                    </select>
+                </div>
+            </div>
             <button type="button" data-action="save">{{localize "AActors.General.Save"}}</button>
-        </div>
+        </footer>
     </div>
 </div>

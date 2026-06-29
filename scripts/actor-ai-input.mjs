@@ -1,19 +1,17 @@
 import { Constants } from "./constants.mjs";
 import ActorAi from "./actor-ai.mjs";
 import AiSettings from "./api/ai-settings.mjs";
-
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const HandlebarsApplication = HandlebarsApplicationMixin(ApplicationV2);
+import { getApplicationForm, HandlebarsApplication, WFRP_DIALOG_CLASSES } from "./applications/handlebars-application.mjs";
 
 export default class ActorAiInput extends HandlebarsApplication {
   static DEFAULT_OPTIONS = {
     id: "actor-ai-input",
-    classes: ["actor-ai", "themed", "theme-light", "wfrp4e", "sheet"],
+    classes: WFRP_DIALOG_CLASSES,
     tag: "form",
     window: {
       title: "AActors.General.PrepareInputForm",
+      icon: "fa-solid fa-hat-wizard",
       resizable: true,
-      contentClasses: ["standard-form"],
     },
     position: {
       width: 500,
@@ -29,8 +27,10 @@ export default class ActorAiInput extends HandlebarsApplication {
   };
 
   static PARTS = {
-    content: {
+    form: {
       template: Constants.TEMPLATES.INPUT,
+      root: true,
+      scrollable: [""],
     },
   };
 
@@ -39,13 +39,14 @@ export default class ActorAiInput extends HandlebarsApplication {
     this.inputData = options.inputData ?? { userId: game.userId };
   }
 
-  async _prepareContext() {
-    return {
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    return foundry.utils.mergeObject(context, {
       description: this.inputData.textInput ?? "",
       complexity: this.inputData.complexity ?? "",
       noOfCareers: this.inputData.noOfCareers ?? "",
       noOfTalents: this.inputData.noOfTalents ?? "",
-    };
+    });
   }
 
   static #onSend(_event, _target) {
@@ -56,13 +57,14 @@ export default class ActorAiInput extends HandlebarsApplication {
       return;
     }
 
-    const form = this.element;
-    this.inputData.textInput = form.querySelector('[name="description"]')?.value ?? "";
-    this.inputData.complexity = form.querySelector('[name="complexity"]')?.value ?? "";
-    this.inputData.noOfCareers = Number(form.querySelector('[name="noOfCareers"]')?.value ?? 0);
-    this.inputData.noOfTalents = Number(form.querySelector('[name="noOfTalents"]')?.value ?? 0);
+    const form = getApplicationForm(this);
+    this.inputData.textInput = form?.querySelector('[name="description"]')?.value ?? "";
+    this.inputData.complexity = form?.querySelector('[name="complexity"]')?.value ?? "";
+    this.inputData.noOfCareers = Number(form?.querySelector('[name="noOfCareers"]')?.value ?? 0);
+    this.inputData.noOfTalents = Number(form?.querySelector('[name="noOfTalents"]')?.value ?? 0);
 
     const payload = foundry.utils.deepClone(this.inputData);
+    this.close();
     new ActorAi({ actorInput: payload }).render(true);
   }
 }

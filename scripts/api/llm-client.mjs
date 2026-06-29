@@ -188,6 +188,28 @@ async function completeAndParseJson(config, postData, userContent) {
   throw lastError;
 }
 
+/**
+ * @param {string} systemContent
+ * @param {string} userContent
+ * @param {{ maxTokens?: number, temperature?: number }} [options]
+ * @returns {Promise<string>}
+ */
+export async function completeLlmText(systemContent, userContent, options = {}) {
+  const config = AiSettings.assertLlmConfigured();
+  const postData = {
+    model: config.model,
+    max_tokens: options.maxTokens ?? 1024,
+    temperature: options.temperature ?? 0.2,
+    messages: [
+      { role: "system", content: systemContent },
+      { role: "user", content: userContent },
+    ],
+  };
+
+  const completion = await fetchCompletion(config, postData);
+  return (completion.text ?? "").trim();
+}
+
 export async function generateLlmJsonCompletion(postData, inputModel) {
   const config = AiSettings.assertLlmConfigured();
   const userContent = `NPC: ${inputModel.TextPrompt}`;

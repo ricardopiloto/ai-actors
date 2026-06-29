@@ -3,15 +3,11 @@ import ChatAiOpenAiApi from './api/chat-ai-open-ai-api.mjs';
 import './api/ai-settings.mjs';
 import './api/settings-ui.mjs';
 import { Constants } from './constants.mjs';
-import { isV13Plus } from './compat.mjs';
 
 export { Constants };
 
 function openActorAiInput() {
-    if (!Constants.mainInput) {
-        Constants.mainInput = new ActorAiInput({ inputData: { userId: game.user?.id } });
-    }
-    Constants.mainInput.render(true);
+    new ActorAiInput({ inputData: { userId: game.user?.id } }).render(true);
 }
 
 function isGm() {
@@ -22,19 +18,43 @@ function isActorDirectory(app) {
     return app?.constructor?.name === 'ActorDirectory';
 }
 
-function getActorDirectoryRoot(app, element) {
+function isChatLog(app) {
+    return app?.constructor?.name === 'ChatLog';
+}
+
+function getApplicationRoot(_app, element) {
     if (element instanceof HTMLElement) return element;
-    if (app?.element instanceof HTMLElement) return app.element;
     return element?.[0] ?? element?.get?.(0) ?? null;
 }
 
-function injectActorDirectoryButton(app, element) {
+function registerActorDirectoryButton() {
+    Hooks.on('getHeaderControlsActorDirectory', (_app, controls) => {
+        if (!isGm()) return;
+
+        controls.unshift({
+            action: 'createActorAi',
+            icon: 'fa-solid fa-hat-wizard',
+            label: 'AActors.General.Create',
+            visible: true,
+            onClick: () => openActorAiInput(),
+        });
+    });
+
+    Hooks.on('renderApplicationV2', (app, element) => {
+        if (isActorDirectory(app)) {
+            injectActorDirectoryFallback(app, element);
+        }
+        if (isChatLog(app)) {
+            ChatAiOpenAiApi.chatListeners(element);
+        }
+    });
+}
+
+function injectActorDirectoryFallback(app, element) {
     if (!isGm()) return;
 
-    const root = getActorDirectoryRoot(app, element);
-    if (!root) return;
-
-    if (root.querySelector('.create-actor-ai-actor')) return;
+    const root = getApplicationRoot(app, element);
+    if (!root || root.querySelector('.create-actor-ai-actor')) return;
 
     const headerActions = root.querySelector('[data-application-part="header"] .header-actions')
         ?? root.querySelector('.directory-header .header-actions')
@@ -58,52 +78,8 @@ function injectActorDirectoryButton(app, element) {
     headerActions.insertAdjacentElement('afterend', wrapper);
 }
 
-function registerActorDirectoryButton() {
-    Hooks.on('getHeaderControlsActorDirectory', (_app, controls) => {
-        if (!isGm()) return;
-
-        controls.unshift({
-            action: 'createActorAi',
-            icon: 'fa-solid fa-hat-wizard',
-            label: 'AActors.General.Create',
-            visible: true,
-            onClick: () => openActorAiInput(),
-        });
-    });
-
-    Hooks.on('renderActorDirectory', (app, element) => {
-        injectActorDirectoryButton(app, element);
-    });
-
-    Hooks.on('renderApplicationV2', (app, element) => {
-        if (isActorDirectory(app)) {
-            injectActorDirectoryButton(app, element);
-        }
-    });
-}
-
-function registerLegacyActorDirectoryButton() {
-    Hooks.on('renderActorDirectory', (_app, html) => {
-        if (!isGm()) return;
-        const directoryHeader = html.find('.header-actions.action-buttons.flexrow');
-        const createActor = game.i18n.localize('AActors.General.Create');
-
-        if (!directoryHeader.find('.create-actor-ai-actor').length) {
-            directoryHeader.append(
-                `<button type="button" class="create-actor-ai-actor" title="${createActor}"><i class="fa-solid fa-hat-wizard"></i> ${createActor}</button>`
-            );
-        }
-
-        html.on('click', '.create-actor-ai-actor', () => openActorAiInput());
-    });
-}
-
 Hooks.once('init', () => {
-    if (isV13Plus()) {
-        registerActorDirectoryButton();
-    } else {
-        registerLegacyActorDirectoryButton();
-    }
+    registerActorDirectoryButton();
 });
 
 Hooks.once('ready', () => {
@@ -117,6 +93,11 @@ Hooks.once('ready', () => {
     if (actorDirectory?.rendered) {
         actorDirectory.render(false);
     }
+
+    const chatLog = ui.chat;
+    if (chatLog?.rendered && chatLog.element) {
+        ChatAiOpenAiApi.chatListeners(chatLog.element);
+    }
 });
 
 Hooks.on('changeSidebarTab', (tab) => {
@@ -124,7 +105,7 @@ Hooks.on('changeSidebarTab', (tab) => {
     requestAnimationFrame(() => {
         const actorDirectory = ui.sidebar?.tabs?.actors;
         if (actorDirectory?.element) {
-            injectActorDirectoryButton(actorDirectory, actorDirectory.element);
+            injectActorDirectoryFallback(actorDirectory, actorDirectory.element);
         }
     });
 });
@@ -174,8 +155,4 @@ Hooks.on('chatMessage', (chatLog, message, chatData) => {
         }
 	}
 	return true;
-});
-
-Hooks.on('renderChatLog', (_log, html) => {
-    ChatAiOpenAiApi.chatListeners(html);
 });

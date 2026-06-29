@@ -1,15 +1,14 @@
 import { Constants } from "./constants.mjs";
-
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const HandlebarsApplication = HandlebarsApplicationMixin(ApplicationV2);
+import { HandlebarsApplication, WFRP_IMAGE_POPOUT_CLASSES } from "./applications/handlebars-application.mjs";
 
 export default class ActorAiImagePopup extends HandlebarsApplication {
   static DEFAULT_OPTIONS = {
     id: "actor-ai-image-popup",
-    classes: ["actor-ai", "themed", "theme-light"],
+    classes: WFRP_IMAGE_POPOUT_CLASSES,
     tag: "div",
     window: {
       title: "AActors.General.ImagePopup",
+      icon: "fa-solid fa-image",
       resizable: true,
     },
     position: {
@@ -21,6 +20,8 @@ export default class ActorAiImagePopup extends HandlebarsApplication {
   static PARTS = {
     content: {
       template: Constants.TEMPLATES.IMAGEPOPUP,
+      root: true,
+      scrollable: [""],
     },
   };
 
@@ -29,9 +30,10 @@ export default class ActorAiImagePopup extends HandlebarsApplication {
     this.image = options.image ?? "";
   }
 
-  async _prepareContext() {
-    return {
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    return foundry.utils.mergeObject(context, {
       image: this.image,
-    };
+    });
   }
 }

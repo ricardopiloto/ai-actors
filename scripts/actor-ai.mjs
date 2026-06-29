@@ -7,19 +7,17 @@ import { getImageApi } from "./api/image-provider.mjs";
 import "./api/ai-settings.mjs";
 import InputModel from "./model/input-model.mjs";
 import { getActorFolders } from "./compat.mjs";
-
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const HandlebarsApplication = HandlebarsApplicationMixin(ApplicationV2);
+import { getApplicationForm, HandlebarsApplication, WFRP_DIALOG_CLASSES } from "./applications/handlebars-application.mjs";
 
 export default class ActorAi extends HandlebarsApplication {
   static DEFAULT_OPTIONS = {
     id: "actor-ai",
-    classes: ["actor-ai", "themed", "theme-light", "wfrp4e", "sheet"],
+    classes: WFRP_DIALOG_CLASSES,
     tag: "form",
     window: {
       title: "AActors.General.SaveActorForm",
+      icon: "fa-solid fa-user-plus",
       resizable: true,
-      contentClasses: ["standard-form"],
     },
     position: {
       width: 700,
@@ -37,8 +35,10 @@ export default class ActorAi extends HandlebarsApplication {
   };
 
   static PARTS = {
-    content: {
+    form: {
       template: Constants.TEMPLATES.ACTOR,
+      root: true,
+      scrollable: [".actor-ai-scroll"],
     },
   };
 
@@ -79,8 +79,9 @@ export default class ActorAi extends HandlebarsApplication {
     };
   }
 
-  async _prepareContext() {
-    const data = {
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    const data = foundry.utils.mergeObject(context, {
       context: this.context,
       folders: [
         { name: game.i18n.localize("AActors.General.SelectFolder"), value: "0" },
@@ -93,7 +94,7 @@ export default class ActorAi extends HandlebarsApplication {
       enrichedHtml: await TextEditor.enrichHTML(this.actorInput.html ?? "", {
         secrets: true,
       }),
-    };
+    });
 
     if (!this.apiInput) {
       this.apiInput = new InputModel(this.actorInput.textInput ?? "");
@@ -190,7 +191,8 @@ export default class ActorAi extends HandlebarsApplication {
   }
 
   static async #onGenerate(_event, _target) {
-    const prompt = this.element.querySelector('[name="actorInput.imagePrompt"]')?.value ?? "";
+    const form = getApplicationForm(this);
+    const prompt = form?.querySelector('[name="actorInput.imagePrompt"]')?.value ?? "";
     this.actorInput.imagePrompt = prompt;
 
     await this.refresh({ stage: "image", message: game.i18n.localize("AActors.OpenAI.StageImage") });
@@ -199,7 +201,8 @@ export default class ActorAi extends HandlebarsApplication {
   }
 
   static async #onSave(_event, _target) {
-    const folderUuid = this.element.querySelector('[name="folder"]')?.value;
+    const form = getApplicationForm(this);
+    const folderUuid = form?.querySelector('[name="folder"]')?.value;
     const folder = folderUuid && folderUuid !== "0" ? game.folders.get(folderUuid) : null;
     const actorData = await this.apiDetails.prepareActorData(this.actorInput);
 
@@ -229,6 +232,7 @@ export default class ActorAi extends HandlebarsApplication {
       });
     }
 
+    this.close();
     actor.sheet.render(true);
   }
 }

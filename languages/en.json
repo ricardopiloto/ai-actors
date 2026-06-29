@@ -3,6 +3,7 @@
     "General": {
       "Create": "Generate AI NPC",
       "Send": "Send to AI",
+      "Description": "Description",
       "DescriptionPlaceholder": "Type a description of a npc",
       "GenerateImage": "Generate Image",
       "SelectFolder": "Select a folder",
@@ -25,6 +26,9 @@
       "OpenRouterConfigMissing": "Configure your OpenRouter API key in module settings.",
       "OpenRouterImageFailed": "OpenRouter image generation failed for model \"{model}\": {details}",
       "OpenRouterImageEmpty": "OpenRouter returned no image data.",
+      "ImagePromptEmpty": "The image prompt is empty.",
+      "ImagePromptPolicyViolation": "The image prompt violates content policies for image generation. Edit the prompt and try again.",
+      "ImagePromptUnfixable": "The image prompt could not be made compliant with content policies. Edit the prompt manually and try again.",
       "LlmJsonInvalid": "The LLM returned invalid JSON: {details}. Try lowering temperature or reducing description complexity.",
       "LlmJsonTruncated": "The LLM response was cut off before the JSON finished (increase Max Tokens in module settings)."
     },
@@ -33,6 +37,8 @@
       "CloudflareRemovedMigrated": "Cloudflare image generation was removed. Image provider switched to OpenRouter — configure your OpenRouter API key in module settings.",
       "RemovedImageProviderMigrated": "An unsupported image provider was removed. Image provider switched to OpenRouter — review module settings.",
       "ImageGenerationSkipped": "Portrait generation was skipped. You can save the NPC without an image or use Generate Image to try again.",
+      "ImagePromptSanitized": "The image prompt was adjusted to comply with content policies.",
+      "ImagePromptReviewSkipped": "LLM is not configured — image prompt was not reviewed for content policy compliance.",
       "LlmJsonRetrying": "NPC JSON was invalid or incomplete. Retrying with stricter instructions..."
     },
     "Settings": {
@@ -149,8 +155,11 @@
       "JsonRetryShortHint": "Use at most 2 short sentences per description field. Prioritize valid JSON over detail.",
       "InitialMessage": "Generating NPC Description...",
       "StageImage": "Generating NPC Image...",
+      "StageImageValidation": "Validating image prompt...",
       "ImageMessage": "Generating NPC Image...",
-      "StageImagePrompt": "- Finally, based on all prepared content, prepare description in English for the purpose of generating an image. The description should start with '<<additionalImageQualities>>. A portrait of'. Return the generated description in JSON format."
+      "StageImagePrompt": "- Finally, based on all prepared content, prepare a safe-for-work English image prompt in the imagePrompt field. The prompt must comply with commercial image API content policies: no nudity, sexual content, graphic gore, hate symbols, real celebrity names, or copyrighted character names. Describe a fully clothed adult fantasy character. The description should start with '<<additionalImageQualities>>. A portrait of'. Return the generated description in JSON format.",
+      "ImagePromptReviewSystem": "You are a content safety reviewer for AI image generation APIs (DALL-E, Flux, and similar). Ensure portrait prompts comply with provider content policies.",
+      "ImagePromptReviewUser": "Review this image generation prompt. If it violates content policies (sexual content, nudity, gore, graphic violence, hate, illegal activity, real celebrity names, minors in inappropriate contexts, or copyrighted characters referenced by name), rewrite it as a safe fantasy RPG character portrait that preserves the character's general appearance, age as an adult, clothing, and setting. If already compliant, return it with only minimal edits. Reply with ONLY the final English prompt text — no explanation.\n\nPrompt:\n<<prompt>>"
     },
     "WFRP": {
       "StageCharacteristics": "Generating NPC characteristics...",

@@ -4,6 +4,7 @@ import {
   generateOpenRouterImage,
   OpenRouterSettings,
 } from "./openrouter-image.mjs";
+import { prepareImagePromptForGeneration } from "./image-prompt-validator.mjs";
 import { ImageProviders } from "./providers.mjs";
 import { registerModuleSetting } from "./settings-ui.mjs";
 
@@ -60,7 +61,11 @@ export default class ImageOpenRouterApi {
   }
 
   async generateImage(prompt, actorInput) {
-    const result = await generateOpenRouterImage(prompt);
+    const safePrompt = await prepareImagePromptForGeneration(prompt);
+    if (actorInput) {
+      actorInput.imagePrompt = safePrompt;
+    }
+    const result = await generateOpenRouterImage(safePrompt);
     actorInput.imageSrc = result.imageSrc;
     actorInput.imageBase64 = result.imageBase64;
   }
