@@ -1,0 +1,89 @@
+name: Release assets
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  attach-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Read module id from module.json
+        id: meta
+        run: |
+          MODULE_ID=$(jq -r '.id' module.json)
+          if [ -z "$MODULE_ID" ] || [ "$MODULE_ID" = "null" ]; then
+            echo "::error::module.json is missing a valid id"
+            exit 1
+          fi
+          echo "module_id=$MODULE_ID" >> "$GITHUB_OUTPUT"
+          echo "Packaging module id: $MODULE_ID"
+
+      - name: Normalize release version
+        id: version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Substitute release-specific values in module.json
+        uses: microsoft/variable-substitution@v1
+        with:
+          files: './module.json'
+        env:
+          version: ${{ steps.version.outputs.version }}
+          url: https://github.com/${{ github.repository }}
+          manifest: https://github.com/${{ github.repository }}/releases/latest/download/module.json
+          download: https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/${{ steps.meta.outputs.module_id }}.zip
+
+      - name: Build installable zip
+        env:
+          MODULE_ID: ${{ steps.meta.outputs.module_id }}
+        run: |
+          mkdir -p "staging/${MODULE_ID}"
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.cursor' \
+            --exclude='.vscode' \
+            --exclude='.crush' \
+            --exclude='doc' \
+            --exclude='docs' \
+            --exclude='effects' \
+            --exclude='openspec' \
+            --exclude='node_modules' \
+            --exclude='dist' \
+            --exclude='build' \
+            --exclude='.env' \
+            --exclude='.DS_Store' \
+            --exclude='staging' \
+            --exclude="${MODULE_ID}.zip" \
+            --exclude='aactors.zip' \
+            ./ "staging/${MODULE_ID}/"
+          (cd staging && zip -rq "../${MODULE_ID}.zip" "${MODULE_ID}")
+          ls -la "${MODULE_ID}.zip"
+          unzip -l "${MODULE_ID}.zip" | head -40
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then
+            echo "::error::Release event is missing tag_name"
+            exit 1
+          fi
+          echo "Uploading assets to release tag: $TAG"
+          gh release upload "$TAG" \
+            "${{ steps.meta.outputs.module_id }}.zip" \
+            module.json \
+            --clobber
